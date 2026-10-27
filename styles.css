@@ -70,3 +70,4 @@
 @media(prefers-reduced-motion:reduce){.snow{display:none}.ticker-track{animation:none}}
 
 .timeline-text{hyphens:auto;overflow-wrap:anywhere}.option{max-width:100%}.option span{min-width:0}
+@media(max-width:600px){.timeline-stop{width:34%}.timeline-text{font-size:clamp(19px,5vw,22px)}}
