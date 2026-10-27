@@ -23,7 +23,7 @@
     text('#rsvp-deadline', `ответьте, пожалуйста, до ${new Intl.DateTimeFormat('ru-RU').format(deadline)}`);
   }
   const map = $('#venue-map');
-  if (map && /^https:\/\//.test(config.venueMapUrl || '')) map.href = config.venueMapUrl;
+  if (map) map.href = `https://yandex.ru/maps/?text=${encodeURIComponent(config.venueAddress || 'поселок Новобутаково 44с1')}`;
   (config.schedule || []).slice(0, 4).forEach((step, i) => { if (Array.isArray(step)) { text(`#timeline-t${i + 1}`, step[0]); const v = $(`.stop-${i + 1} .timeline-text`); if (v) v.textContent = step[1]; } });
 
   const photos = [ ['#hero-photo-one', config.heroImages?.[0]], ['#hero-photo-two', config.heroImages?.[1]], ['#venue-photo', config.venueImage] ];
@@ -68,7 +68,17 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
 
-  const motionOK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let motionOK = !motionPreference.matches;
+  motionPreference.addEventListener('change', () => { motionOK = !motionPreference.matches; updateScroll(); });
+  const track = $('.ticker-track');
+  track.replaceChildren();
+  const group = document.createElement('div'); group.className = 'ticker-group';
+  for (let i = 0; i < 8; i++) { const item = document.createElement('span'); item.className = 'ticker-item'; item.textContent = 'приглашение на свадьбу ♡'; group.append(item); }
+  track.append(group, group.cloneNode(true));
+  const snow = document.createElement('div'); snow.className = 'snow'; snow.setAttribute('aria-hidden', 'true');
+  for (let i = 0; i < 32; i++) { const flake = document.createElement('i'); flake.style.cssText = `--left:${(i * 47.3) % 100}%;--duration:${18 + i % 15}s;--delay:-${i * 2.7}s;--drift:${(i % 7 - 3) * 13}px`; snow.append(flake); }
+  document.body.prepend(snow);
   if ('IntersectionObserver' in window && motionOK) {
     const observer = new IntersectionObserver(entries => entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('is-visible'); observer.unobserve(entry.target); } }), { threshold: 0.12, rootMargin: '0px 0px -24px 0px' });
     $$('.reveal').forEach(el => observer.observe(el));
@@ -80,6 +90,14 @@
   const backToTop = $('.back-to-top');
   let pathLen = 0;
   if (path) { pathLen = path.getTotalLength(); path.style.strokeDasharray = String(pathLen); path.style.strokeDashoffset = String(pathLen); }
+  const stopProgress = [.07, .31, .54, .79].map(stage => {
+    let nearest = 0, distance = Infinity;
+    for (let n = 0; n <= 1000; n++) {
+      const delta = Math.abs(path.getPointAtLength(pathLen * n / 1000).y / 1200 - stage);
+      if (delta < distance) { distance = delta; nearest = n / 1000; }
+    }
+    return nearest;
+  });
   let ticking = false;
   const updateScroll = () => {
     const max = document.documentElement.scrollHeight - window.innerHeight;
@@ -88,26 +106,30 @@
     backToTop?.classList.toggle('shown', window.scrollY > 800);
     if (path && pathLen) {
       const rect = $('#timeline-inner').getBoundingClientRect();
-      const raw = (window.innerHeight * 0.66 - rect.top) / (rect.height + window.innerHeight * 0.25);
-      const value = Math.max(0, Math.min(1, raw));
+      const raw = (window.innerHeight * 0.66 - rect.top) / rect.height;
+      const value = motionOK ? Math.max(0, Math.min(1, raw)) : 1;
       path.style.strokeDashoffset = String(pathLen * (1 - value));
       if (travelHeart) {
         const p = path.getPointAtLength(pathLen * value);
-        travelHeart.style.left = `${p.x}px`;
-        travelHeart.style.top = `${p.y}px`;
-        travelHeart.style.opacity = value > 0.02 ? '1' : '0';
+        const svgRect = path.ownerSVGElement.getBoundingClientRect();
+        travelHeart.setAttribute('transform', `translate(${p.x} ${p.y}) scale(${540 / svgRect.width * .65} ${1200 / svgRect.height * .65})`);
+        travelHeart.style.opacity = '1';
       }
     }
+    $$('.timeline-stop').forEach((stop, i) => {
+      const rect = $('#timeline-inner').getBoundingClientRect();
+      const progress = Math.max(0, Math.min(1, (window.innerHeight * .66 - rect.top) / rect.height));
+      const phase = motionOK ? Math.max(0, Math.min(1, (progress - stopProgress[i] + .08) / .16)) : 1;
+      const eased = phase * phase * (3 - 2 * phase);
+      const distance = (window.innerWidth / 2 + stop.offsetWidth) * (i % 2 ? 1 : -1);
+      stop.style.transform = `translateX(${distance * (1 - eased)}px)`;
+      stop.style.opacity = String(eased);
+    });
     ticking = false;
   };
   window.addEventListener('scroll', () => { if (!ticking) { requestAnimationFrame(updateScroll); ticking = true; } }, { passive: true });
   window.addEventListener('resize', updateScroll, { passive: true });
   updateScroll();
-  $('#envelope')?.addEventListener('click', e => {
-    const button = e.currentTarget;
-    const open = button.classList.toggle('open');
-    button.setAttribute('aria-expanded', String(open));
-  });
 
   const form = $('#rsvp-form');
   const attendingGroup = $('#attending-fields');
