@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#fffbe7" />
+  <meta name="description" content="Свадебное приглашение. Мы будем рады разделить этот день с вами!" />
+  <title>Мы женимся! — приглашение</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bad+Script&family=Caveat:wght@400;500;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script defer src="site.config.js"></script>
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <div class="reading-line" aria-hidden="true"><span id="reading-line-fill"></span></div>
+  <main>
+    <section class="hero paper" id="top" aria-labelledby="hero-title">
+      <svg class="hero-garland" viewBox="0 0 1440 230" preserveAspectRatio="none" aria-hidden="true"><path d="M-35 0 C300 220 990 210 1470 -10" /><path class="hero-heart" d="M716 144C677 100 614 153 667 207L718 250L768 207C817 161 756 99 716 144Z" transform="translate(0,-40) scale(1,.82)" /></svg>
+      <div class="hero-copy">
+        <p class="hero-kicker reveal">наконец-то...</p>
+        <h1 id="hero-title" class="hero-title reveal">МЫ ЖЕНИМСЯ</h1>
+        <div class="hero-subline reveal"><span>интересно, кто будет плакать,<br /> когда мы вырастем?</span><span>— мы будем :)</span></div>
+      </div>
+      <div class="hero-portraits reveal" aria-label="Место для фотографий пары">
+        <div class="portrait portrait-one" id="photo-bride">
+          <img id="hero-photo-one" src="" alt="Демонстрационный портрет невесты" />
+          <div class="portrait-fallback" aria-hidden="true">♡<small>фото<br />невесты</small></div>
+        </div>
+        <div class="portrait portrait-two" id="photo-groom">
+          <img id="hero-photo-two" src="" alt="Демонстрационный портрет жениха" />
+          <div class="portrait-fallback" aria-hidden="true">♡<small>фото<br />жениха</small></div>
+        </div>
+      </div>
+      <div class="hero-date-script reveal" id="hero-date-script">19.06.2027</div>
+      <div class="ticker" aria-label="Приглашение на свадьбу"><div class="ticker-track" aria-hidden="true">приглашение на свадьбу ♡ приглашение на свадьбу ♡ приглашение на свадьбу ♡ приглашение на свадьбу ♡ приглашение на свадьбу ♡ приглашение на свадьбу ♡ </div></div>
+      <div class="scroll-hint">листай вниз <span aria-hidden="true">↓</span></div>
+    </section>
+
+    <section class="intro-section paper section-shell">
+      <div class="section-index reveal">01 / THE DAY</div>
+      <p class="intro-text reveal">Дорогие друзья и близкие,<br /> мы приглашаем вас разделить<br /> с нами наше <em>особенное торжество</em>,<br /> которое состоится</p>
+      <p class="date-callout reveal" id="date-callout">19.06.2027 в 15:00</p>
+      <div class="calendar-card reveal">
+        <div class="tape tape-top" aria-hidden="true"></div>
+        <p class="calendar-month" id="calendar-month">июнь</p>
+        <div class="calendar-grid" id="calendar-grid" aria-label="Календарь даты свадьбы"></div>
+        <svg class="calendar-circle" viewBox="0 0 100 75" aria-hidden="true"><path d="M13 44C1 22 24 5 53 8c37 1 48 23 33 46C71 73 23 69 13 44Z" /></svg>
+      </div>
+      <button class="hand-link calendar-save" id="save-date" type="button">сохранить дату ↗</button>
+    </section>
+
+    <section class="timeline-section paper section-shell" id="timing">
+      <div class="section-index reveal">02 / OUR DAY</div>
+      <h2 class="section-heading reveal">Тайминг</h2>
+      <div class="timeline-inner" id="timeline-inner">
+        <svg class="timeline-route" viewBox="0 0 540 1200" preserveAspectRatio="none" aria-hidden="true">
+          <path class="timeline-route-bg" d="M320 15 C140 170 470 220 290 350 S70 540 278 695 S515 820 268 1040 S185 1150 280 1195" />
+          <path id="timeline-ink" class="timeline-route-ink" d="M320 15 C140 170 470 220 290 350 S70 540 278 695 S515 820 268 1040 S185 1150 280 1195" />
+        </svg>
+        <div class="timeline-stop stop-1 reveal"><div class="timeline-time" id="timeline-t1">15:00</div><div class="timeline-text">сбор гостей</div><span class="heart-icon" aria-hidden="true">♥</span></div>
+        <div class="timeline-stop stop-2 reveal"><div class="timeline-time" id="timeline-t2">16:00</div><div class="timeline-text">торжественная<br /> церемония</div><span class="heart-icon" aria-hidden="true">♥</span></div>
+        <div class="timeline-stop stop-3 reveal"><div class="timeline-time" id="timeline-t3">17:00</div><div class="timeline-text">банкет и танцы</div><span class="heart-icon" aria-hidden="true">♥</span></div>
+        <div class="timeline-stop stop-4 reveal"><div class="timeline-time" id="timeline-t4">22:00</div><div class="timeline-text">обнимашки<br /> на прощание</div><span class="heart-icon" aria-hidden="true">♥</span></div>
+      </div>
+    </section>
+
+    <section class="venue-section paper section-shell" id="location">
+      <div class="section-index reveal">03 / THE PLACE</div>
+      <h2 class="section-heading reveal">Локация</h2>
+      <div class="polaroid reveal">
+        <svg class="paperclip" viewBox="0 0 70 110" aria-hidden="true"><path d="M21 66V25c0-18 29-20 29 1v54c0 25-38 26-38-1V28c0-29 48-30 48 1v45" /></svg>
+        <img id="venue-photo" src="" alt="Демонстрационная фотография места проведения праздника" loading="lazy" />
+        <div class="photo-fallback" aria-hidden="true"><span>✿</span>место для фото локации</div>
+        <span class="polaroid-footnote">встретимся здесь ♡</span>
+      </div>
+      <p class="venue-name reveal" id="venue-name">Загородная оранжерея</p>
+      <p class="venue-address reveal" id="venue-address">Москва, ул. Цветочная, 7<br />(демонстрационный адрес)</p>
+      <a class="hand-link venue-map reveal" id="venue-map" href="https://yandex.ru/maps/" target="_blank" rel="noopener noreferrer">посмотреть на карте ↗</a>
+    </section>
+
+    <section class="dress-section paper section-shell" id="dress-code">
+      <div class="section-index reveal">04 / THE LOOK</div>
+      <h2 class="section-heading reveal">Дресс-код</h2>
+      <div class="note-card reveal">
+        <div class="tape" aria-hidden="true"></div>
+        <p>Мы стараемся сделать праздник красивым и стильным и будем рады, если вы поддержите цветовую гамму</p>
+        <div class="swatches" aria-label="Рекомендованные цвета дресс-кода"><span style="--swatch:#e4b0bc" title="Пудровый розовый"></span><span style="--swatch:#e27ba8" title="Розовый"></span><span style="--swatch:#f5e6d4" title="Кремовый"></span><span style="--swatch:#b10b57" title="Малиновый"></span></div>
+      </div>
+      <svg class="heart-divider" viewBox="0 0 460 130" preserveAspectRatio="none" aria-hidden="true"><path d="M-4 15C130 111 310 112 465 15"/><path class="filled-heart" d="M229 93c-30-33-66-3-39 28l39 30 39-30c29-31-10-61-39-28Z" transform="translate(0,-20) scale(1,.8)"/></svg>
+    </section>
+
+    <section class="wishes-section paper section-shell" id="wishes">
+      <div class="section-index reveal">05 / FROM THE HEART</div>
+      <h2 class="section-heading reveal">Пожелания</h2>
+      <p class="wishes-text reveal">Дорогие гости, можем не переживать по поводу подарка: мы будем рады вашим пожеланиям в конвертах ♡</p>
+      <button type="button" class="envelope reveal" id="envelope" aria-expanded="false" aria-controls="envelope-message" title="Открыть конвертик">
+        <span class="envelope-paper" id="envelope-message">главное — что вы рядом ♡</span>
+        <span class="envelope-back"></span><span class="envelope-flap"></span><span class="envelope-front"></span><span class="envelope-seal">♥</span>
+      </button>
+      <p class="hand-link envelope-caption reveal">нажми на конвертик ↑</p>
+    </section>
+
+    <section class="rsvp-section" id="rsvp" aria-labelledby="rsvp-title">
+      <div class="rsvp-wrap">
+        <div class="section-index section-index-light reveal">06 / RSVP</div>
+        <h2 class="rsvp-title reveal" id="rsvp-title">Мы очень ждём вас!</h2>
+        <p class="rsvp-lead reveal">Пожалуйста, подтвердите своё присутствие, заполнив анкету ниже. Это поможет нам в организации нашего праздника.</p>
+        <div class="rsvp-deadline reveal" id="rsvp-deadline">ответьте, пожалуйста, до 01.06.2027</div>
+        <form class="rsvp-form reveal" id="rsvp-form" novalidate>
+          <label class="form-block"><span>Имя и фамилия <b>*</b></span><input name="name" type="text" autocomplete="name" placeholder="как к вам обращаться" required maxlength="120" /></label>
+          <fieldset class="form-block"><legend>Планируете присутствовать на свадьбе? <b>*</b></legend>
+            <label class="option"><input type="radio" name="attending" value="Да, конечно!" required /><span>Конечно, да!</span></label>
+            <label class="option"><input type="radio" name="attending" value="К сожалению, нет" /><span>К сожалению, нет</span></label>
+            <label class="option"><input type="radio" name="attending" value="Отвечу чуть позже" /><span>Дам ответ чуть позже</span></label>
+          </fieldset>
+          <div class="conditional" id="attending-fields">
+            <label class="form-block"><span>Придёте не одни? Напишите имена гостей</span><input name="additionalGuests" type="text" placeholder="если планируете прийти с парой или семьёй" maxlength="250" /></label>
+            <fieldset class="form-block"><legend>Ваши предпочтения по напиткам <small>(можно несколько)</small></legend>
+              <label class="option"><input type="checkbox" name="drinks" value="Игристое" /><span>Игристое</span></label>
+              <label class="option"><input type="checkbox" name="drinks" value="Вино белое" /><span>Вино белое</span></label>
+              <label class="option"><input type="checkbox" name="drinks" value="Вино красное" /><span>Вино красное</span></label>
+              <label class="option"><input type="checkbox" name="drinks" value="Крепкие напитки" /><span>Крепкие напитки</span></label>
+              <label class="option"><input type="checkbox" name="drinks" value="Безалкогольное" /><span>Безалкогольное</span></label>
+            </fieldset>
+            <label class="form-block"><span>Есть ли пожелания по меню?</span><textarea name="food" rows="2" maxlength="1000" placeholder="можно оставить пустым"></textarea></label>
+          </div>
+          <label class="form-block"><span>Хотите нам что-нибудь написать? ♡</span><textarea name="message" rows="2" maxlength="2000" placeholder="нам будет очень приятно"></textarea></label>
+          <label class="consent"><input type="checkbox" name="consent" required /><span>Согласен(на) передать эти ответы организаторам праздника для учета гостей. <b>*</b></span></label>
+          <div class="honeypot" aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off" /></label></div>
+          <p id="mode-note" class="mode-note" role="status"></p>
+          <p id="form-error" class="form-error" role="alert" hidden></p>
+          <button type="submit" id="rsvp-submit" class="submit-button">отправить ответ <span aria-hidden="true">♡</span></button>
+        </form>
+        <div id="rsvp-success" class="rsvp-success" role="status" hidden><div class="success-heart">♥</div><h3>Спасибо за ответ!</h3><p id="success-message"></p><button class="edit-answer" id="edit-answer" type="button">изменить ответ ↗</button></div>
+        <div class="footer-line" aria-hidden="true"><svg viewBox="0 0 600 100" preserveAspectRatio="none"><path d="M0 10Q310 155 600 10"/><path class="cream-heart" d="M300 68c-18-22-43-4-26 16l26 20 25-20c19-20-6-38-25-16Z"/></svg></div>
+        <p class="goodbye reveal">до скорой встречи!</p><p class="signature" id="signature">ваши Лера и Макс ♡</p>
+      </div>
+    </section>
+  </main>
+  <a href="#top" class="back-to-top" aria-label="В начало страницы">↑</a>
+</body>
+</html>
