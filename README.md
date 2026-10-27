@@ -14,10 +14,10 @@
 
 ## GitHub Pages (отдельный репозиторий)
 
-1. Создайте **новый публичный репозиторий** на GitHub, например `wedding` (не трогайте репозиторий портфолио).
+1. Создайте **новый публичный репозиторий** на GitHub, например `wedding-longread` (не трогайте репозиторий портфолио).
 2. Загрузите все файлы из папки стартера, включая `.github/workflows/pages.yml` и `.nojekyll`, в корень нового репозитория. Ветка — `main`.
 3. В GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-4. GitHub Actions после пуша опубликует сайт. Ссылка обычно вида `https://Zakkhorren.github.io/wedding/`.
+4. GitHub Actions после пуша опубликует сайт. Ссылка обычно вида `https://USERNAME.github.io/wedding-longread/`.
 5. Следующие изменения в ветке `main` обновят сайт автоматически.
 
 Так как пути относительные, проект работает и в корне домена, и на GitHub Pages в репозитории-подпапке.
@@ -33,7 +33,7 @@
 В папке `worker/telegram-worker.js` лежит пример Cloudflare Worker, который принимает HTTPS POST и отправляет сообщение в Telegram. В Cloudflare Worker настройте:
 
 - Secrets (не в коде): `BOT_TOKEN` и `CHAT_ID`.
-- Environment variable `ALLOWED_ORIGIN` — полный origin публичного сайта, например `https://USERNAME.github.io` (без пути `/wedding`).
+- Environment variable `ALLOWED_ORIGIN` — полный origin публичного сайта, например `https://USERNAME.github.io` (без пути `/wedding-longread`).
 - Разместите Worker, получите HTTPS URL, вставьте его в `site.config.js` как `rsvpEndpoint`.
 - Проверьте работу реальной отправки в Telegram, прежде чем раздавать ссылку гостям.
 

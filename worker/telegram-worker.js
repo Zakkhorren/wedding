@@ -1,20 +1,54 @@
-// Отдельный Cloudflare Worker. НИКОГДА не публикуйте BOT_TOKEN и CHAT_ID.
-// Secrets: BOT_TOKEN, CHAT_ID. Environment variable: ALLOWED_ORIGIN.
+/**
+ * Пример Cloudflare Worker — Telegram relay для RSVP.
+ * Настройте в Cloudflare Worker Secrets: BOT_TOKEN, CHAT_ID.
+ * Обычная переменная: ALLOWED_ORIGIN=https://YOUR-USERNAME.github.io
+ * Не публикуйте реальные значения секретов в GitHub.
+ * Для продакшена желательно дополнительно включить Turnstile/антиспам, rate limiting.
+ */
 export default {
   async fetch(request, env) {
-    const allowed=env.ALLOWED_ORIGIN;
-    const origin=request.headers.get("Origin")||"";
-    const headers={"Access-Control-Allow-Origin":origin===allowed?allowed:"null","Vary":"Origin","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"Content-Type","Content-Type":"application/json"};
-    if(request.method==="OPTIONS")return new Response(null,{status:204,headers});
-    if(request.method!=="POST"||!allowed||origin!==allowed)return new Response('{"ok":false}',{status:403,headers});
-    const size=Number(request.headers.get("Content-Length")||0);
-    if(size>8192)return new Response('{"ok":false}',{status:413,headers});
-    let body;try{body=await request.json()}catch{return new Response('{"ok":false}',{status:400,headers})}
-    if(!body||typeof body.name!=="string"||body.name.trim().length<2||body.name.length>120||!["Да, конечно!","К сожалению, нет","Отвечу чуть позже"].includes(body.attending)||body.consent!==true)return new Response('{"ok":false}',{status:400,headers});
-    const clean=x=>String(x||"").replace(/[<>]/g,"").slice(0,2500);
-    const msg=["💌 Ответ на приглашение","Имя: "+clean(body.name),"Присутствие: "+clean(body.attending),"С кем: "+clean(body.additionalGuests),"Напитки: "+(Array.isArray(body.drinks)?body.drinks.map(clean).join(", "):""),"Меню: "+clean(body.food),"Сообщение: "+clean(body.message),"Дата: "+clean(body.createdAt)].join("\n").slice(0,3900);
-    if(!env.BOT_TOKEN||!env.CHAT_ID)return new Response('{"ok":false}',{status:503,headers});
-    const res=await fetch("https://api.telegram.org/bot"+env.BOT_TOKEN+"/sendMessage",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:env.CHAT_ID,text:msg})});
-    return new Response(JSON.stringify({ok:res.ok}),{status:res.ok?200:502,headers});
+    const origin = request.headers.get('Origin') || '';
+    const allowed = env.ALLOWED_ORIGIN || '';
+    const cors = {
+      'Access-Control-Allow-Origin': allowed,
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Vary': 'Origin'
+    };
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: origin === allowed ? 204 : 403, headers: cors });
+    }
+    if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+    if (!origin || origin !== allowed) return new Response('Forbidden', { status: 403, headers: cors });
+    if (!env.BOT_TOKEN || !env.CHAT_ID) return new Response('Not configured', { status: 503, headers: cors });
+    if (Number(request.headers.get('Content-Length') || 0) > 12000) return new Response('Too large', { status: 413, headers: cors });
+    let payload;
+    try { payload = await request.json(); } catch { return new Response('Bad JSON', { status: 400, headers: cors }); }
+    const s = (v, max=1000) => String(v ?? '').trim().slice(0,max);
+    const name = s(payload.name,120);
+    const attending = s(payload.attending,80);
+    const allowedAttendance = ['Да, конечно!', 'К сожалению, нет', 'Отвечу чуть позже'];
+    if (!name || !allowedAttendance.includes(attending) || payload.consent !== true) return new Response('Invalid RSVP', { status: 400, headers: cors });
+    const drinks = Array.isArray(payload.drinks) ? payload.drinks.slice(0,10).map(v=>s(v,60)).join(', ') : '';
+    const message = [
+      '💌 Новый ответ RSVP',
+      `Имя: ${name}`,
+      `Присутствие: ${attending}`,
+      `Доп. гости: ${s(payload.additionalGuests,250)||'—'}`,
+      `Напитки: ${drinks||'—'}`,
+      `Пожелания по меню: ${s(payload.food,1000)||'—'}`,
+      `Сообщение: ${s(payload.message,2000)||'—'}`
+    ].join('\n').slice(0,3900);
+    try {
+      const telegram = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: env.CHAT_ID, text: message })
+      });
+      if (!telegram.ok) return new Response('Delivery failed', { status: 502, headers: cors });
+      return new Response(JSON.stringify({ ok: true }), { status: 200, headers: {...cors,'Content-Type':'application/json; charset=utf-8'} });
+    } catch {
+      return new Response('Delivery failed', { status: 502, headers: cors });
+    }
   }
 };
