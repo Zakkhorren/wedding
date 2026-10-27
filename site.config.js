@@ -16,7 +16,7 @@ window.WEDDING_CONFIG = {
   venueImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1100&q=85',
   venueName: 'Поселок Новобутаково',
   venueAddress: 'поселок Новобутаково 44с1',
-  venueMapUrl: 'https://yandex.ru/maps/?text=%D0%BF%D0%BE%D1%81%D0%B5%D0%BB%D0%BE%D0%BA%20%D0%9D%D0%BE%D0%B2%D0%BE%D0%B1%D1%83%D1%82%D0%B0%D0%BA%D0%BE%D0%B2%D0%BE%2044%D1%811',
+  venueMapUrl: 'https://yandex.ru/maps/?mode=search&text=%D0%BF%D0%BE%D1%81%D0%B5%D0%BB%D0%BE%D0%BA%20%D0%9D%D0%BE%D0%B2%D0%BE%D0%B1%D1%83%D1%82%D0%B0%D0%BA%D0%BE%D0%B2%D0%BE%2044%D1%811',
   schedule: [
     ['16:00', 'сбор гостей'],
     ['17:00', 'торжественная церемония'],
