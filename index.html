@@ -14,10 +14,11 @@
   <script defer src="script.js"></script>
 </head>
 <body>
+  <svg class="heart-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><path id="wedding-heart-shape" d="M47.52,30.45c.97-.2,1.56-1.86,2.14-2.74,2.28-4.23,4.83-8.4,7.79-12.12,6.1-7.5,16.47-16.8,26.61-11.74,3.61,1.95,6.69,5.2,8,9.04,3.03,9.99-6.07,22.98-11.38,31.1-10.23,14.37-22.06,27.57-34.31,40.24-2.24,2.15-4.59,2.15-6.92.13C22.93,68.15,2.74,45.16.17,21.37-.29,16.22.04,10.52,3.16,6.24c10.24-12.76,29.88-3.81,37.41,7.72,2.78,3.95,4.75,8.51,5.7,13.22.3,1.01.35,2.75,1.2,3.26h.06Z"/></defs></svg>
   <div class="reading-line" aria-hidden="true"><span id="reading-line-fill"></span></div>
   <main>
     <section class="hero paper" id="top" aria-labelledby="hero-title">
-      <div class="hero-garland thread-decoration" aria-hidden="true"><svg class="thread-line" viewBox="0 0 1000 120" preserveAspectRatio="none"><path d="M0 8 Q500 180 1000 8"/></svg><svg class="thread-heart" viewBox="-26 -24 52 52"><path d="M0 -7 C-10 -20 -24 -8 -15 3 L0 17 L15 3 C24 -8 10 -20 0 -7Z"/></svg></div>
+      <div class="hero-garland thread-decoration" aria-hidden="true"><svg class="thread-line" viewBox="0 0 1000 120" preserveAspectRatio="none"><path d="M0 8 Q500 180 1000 8"/></svg><svg class="thread-heart heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></div>
       <div class="hero-copy">
         <p class="hero-kicker reveal">наконец-то...</p>
         <h1 id="hero-title" class="hero-title reveal">МЫ ЖЕНИМСЯ</h1>
@@ -26,16 +27,16 @@
       <div class="hero-portraits reveal" aria-label="Место для фотографий пары">
         <div class="portrait portrait-one" id="photo-bride">
           <img id="hero-photo-one" src="assets/sonya.png" alt="Соня в детстве" />
-          <div class="portrait-fallback" aria-hidden="true">♡<small>фото<br />невесты</small></div>
+          <div class="portrait-fallback" aria-hidden="true"><svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg><small>фото<br />невесты</small></div>
         </div>
         <div class="portrait portrait-two" id="photo-groom">
           <img id="hero-photo-two" src="assets/lesha.png" alt="Леша в детстве" />
-          <div class="portrait-fallback" aria-hidden="true">♡<small>фото<br />жениха</small></div>
+          <div class="portrait-fallback" aria-hidden="true"><svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg><small>фото<br />жениха</small></div>
         </div>
       </div>
       <div class="hero-date-script reveal" id="hero-date-script">Соня + Леша · 23.01.2027</div>
       <div class="scroll-hint">листай вниз <span aria-hidden="true">↓</span></div>
-      <div class="ticker" aria-label="Приглашение на свадьбу"><div class="ticker-track" aria-hidden="true"><span>приглашение на свадьбу ♡ приглашение на свадьбу ♡ приглашение на свадьбу ♡ приглашение на свадьбу ♡</span><span>приглашение на свадьбу ♡ приглашение на свадьбу ♡ приглашение на свадьбу ♡ приглашение на свадьбу ♡</span></div></div>
+      <div class="ticker" aria-label="Приглашение на свадьбу"><div class="ticker-track" aria-hidden="true"><span>приглашение на свадьбу <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg> приглашение на свадьбу <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg> приглашение на свадьбу <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg> приглашение на свадьбу <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></span><span>приглашение на свадьбу <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg> приглашение на свадьбу <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg> приглашение на свадьбу <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg> приглашение на свадьбу <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></span></div></div>
     </section>
 
     <section class="intro-section paper section-shell">
@@ -58,7 +59,7 @@
         <svg class="timeline-route" viewBox="0 0 540 1200" preserveAspectRatio="none" aria-hidden="true">
           <path class="timeline-route-bg" d="M320 15 C140 170 470 220 290 350 S70 540 278 695 S515 820 268 1040 S185 1150 280 1195" />
           <path id="timeline-ink" class="timeline-route-ink" d="M320 15 C140 170 470 220 290 350 S70 540 278 695 S515 820 268 1040 S185 1150 280 1195" />
-          <g id="timeline-travel-heart" aria-hidden="true"><path d="M0 -7 C-10 -20 -24 -8 -15 3 L0 17 L15 3 C24 -8 10 -20 0 -7Z"/></g>
+          <g id="timeline-travel-heart" aria-hidden="true"><use href="#wedding-heart-shape"/></g>
         </svg>
         <div class="timeline-stop stop-1"><div class="timeline-time" id="timeline-t1">16:00</div><div class="timeline-text">сбор гостей</div></div>
         <div class="timeline-stop stop-2"><div class="timeline-time" id="timeline-t2">17:00</div><div class="timeline-text">торжественная церемония</div></div>
@@ -72,9 +73,9 @@
       <h2 class="section-heading reveal">Локация</h2>
       <div class="polaroid reveal">
         <svg class="paperclip" viewBox="0 0 70 110" aria-hidden="true"><path d="M21 66V25c0-18 29-20 29 1v54c0 25-38 26-38-1V28c0-29 48-30 48 1v45" /></svg>
-        <img id="venue-photo" src="" alt="Демонстрационная фотография места проведения праздника" loading="lazy" />
+        <img id="venue-photo" src="assets/venue.jpg" width="1080" height="1055" alt="Место проведения свадьбы" loading="lazy" />
         <div class="photo-fallback" aria-hidden="true"><span>✿</span>место для фото локации</div>
-        <span class="polaroid-footnote">встретимся здесь ♡</span>
+        <span class="polaroid-footnote">встретимся здесь <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></span>
       </div>
       <p class="venue-name reveal" id="venue-name">Поселок Новобутаково</p>
       <p class="venue-address reveal" id="venue-address">поселок Новобутаково 44с1</p>
@@ -86,15 +87,15 @@
       <h2 class="section-heading reveal">Дресс-код</h2>
       <div class="note-card reveal">
         <div class="tape" aria-hidden="true"></div>
-        <p>Дресс-кода у нас нет — нам совсем не важно, в чем вы будете. Главное, что вы рядом и разделите этот день вместе с нами ♡</p>
+        <p>Дресс-кода у нас нет — нам совсем не важно, в чем вы будете. Главное, что вы рядом и разделите этот день вместе с нами <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></p>
       </div>
-      <div class="heart-divider thread-decoration" aria-hidden="true"><svg class="thread-line" viewBox="0 0 1000 120" preserveAspectRatio="none"><path d="M0 8 Q500 180 1000 8"/></svg><svg class="thread-heart" viewBox="-26 -24 52 52"><path d="M0 -7 C-10 -20 -24 -8 -15 3 L0 17 L15 3 C24 -8 10 -20 0 -7Z"/></svg></div>
+      <div class="heart-divider thread-decoration" aria-hidden="true"><svg class="thread-line" viewBox="0 0 1000 120" preserveAspectRatio="none"><path d="M0 8 Q500 180 1000 8"/></svg><svg class="thread-heart heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></div>
     </section>
 
     <section class="wishes-section paper section-shell" id="wishes">
       <div class="section-index reveal">05 / FROM THE HEART</div>
       <h2 class="section-heading reveal">Пожелания</h2>
-      <p class="wishes-text reveal">Дорогие гости, можем не переживать по поводу подарка: мы будем рады вашим пожеланиям в конвертах ♡</p>
+      <p class="wishes-text reveal">Дорогие гости, можем не переживать по поводу подарка: мы будем рады вашим пожеланиям в конвертах <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></p>
       <img class="envelope" src="assets/blue-envelope.png" width="1448" height="1086" alt="" loading="lazy" decoding="async" aria-hidden="true" />
     </section>
 
@@ -122,16 +123,16 @@
             </fieldset>
             <label class="form-block"><span>Есть ли пожелания по меню?</span><textarea name="food" rows="2" maxlength="1000" placeholder="можно оставить пустым"></textarea></label>
           </div>
-          <label class="form-block"><span>Хотите нам что-нибудь написать? ♡</span><textarea name="message" rows="2" maxlength="2000" placeholder="нам будет очень приятно"></textarea></label>
+          <label class="form-block"><span>Хотите нам что-нибудь написать? <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></span><textarea name="message" rows="2" maxlength="2000" placeholder="нам будет очень приятно"></textarea></label>
           <label class="consent"><input type="checkbox" name="consent" required /><span>Согласен(на) передать эти ответы организаторам праздника для учета гостей. <b>*</b></span></label>
           <div class="honeypot" aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off" /></label></div>
           <p id="mode-note" class="mode-note" role="status"></p>
           <p id="form-error" class="form-error" role="alert" hidden></p>
-          <button type="submit" id="rsvp-submit" class="submit-button">отправить ответ <span aria-hidden="true">♡</span></button>
+          <button type="submit" id="rsvp-submit" class="submit-button">отправить ответ <span aria-hidden="true"><svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></span></button>
         </form>
-        <div id="rsvp-success" class="rsvp-success" role="status" hidden><div class="success-heart">♥</div><h3>Спасибо за ответ!</h3><p id="success-message"></p><button class="edit-answer" id="edit-answer" type="button">изменить ответ ↗</button></div>
-        <div class="footer-line thread-decoration" aria-hidden="true"><svg class="thread-line" viewBox="0 0 1000 120" preserveAspectRatio="none"><path d="M0 8 Q500 180 1000 8"/></svg><svg class="thread-heart" viewBox="-26 -24 52 52"><path d="M0 -7 C-10 -20 -24 -8 -15 3 L0 17 L15 3 C24 -8 10 -20 0 -7Z"/></svg></div>
-        <p class="goodbye reveal">до скорой встречи!</p><p class="signature" id="signature">ваши Соня и Леша ♡</p>
+        <div id="rsvp-success" class="rsvp-success" role="status" hidden><div class="success-heart"><svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></div><h3>Спасибо за ответ!</h3><p id="success-message"></p><button class="edit-answer" id="edit-answer" type="button">изменить ответ ↗</button></div>
+        <div class="footer-line thread-decoration" aria-hidden="true"><svg class="thread-line" viewBox="0 0 1000 120" preserveAspectRatio="none"><path d="M0 8 Q500 180 1000 8"/></svg><svg class="thread-heart heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></div>
+        <p class="goodbye reveal">до скорой встречи!</p><p class="signature" id="signature">ваши Соня и Леша <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></p>
       </div>
     </section>
   </main>

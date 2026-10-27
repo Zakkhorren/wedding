@@ -71,3 +71,19 @@
 
 .timeline-text{hyphens:auto;overflow-wrap:anywhere}.option{max-width:100%}.option span{min-width:0}
 @media(max-width:600px){.timeline-stop{width:34%}.timeline-text{font-size:clamp(19px,5vw,22px)}}
+
+/* The supplied heart geometry is shared by inline icons, threads and the route. */
+:root{--heart-size:24px}
+.heart-definitions{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
+.heart-icon{display:inline-block;width:var(--heart-size);height:auto;aspect-ratio:92.66/85.85;vertical-align:-.12em;flex:none;overflow:visible;fill:currentColor}
+.heart-icon use{fill:currentColor;stroke:none}
+.thread-decoration .thread-heart{width:var(--heart-size);height:auto;aspect-ratio:92.66/85.85;top:78.333333%}
+#timeline-travel-heart{color:var(--slate);fill:currentColor;stroke:none}
+#timeline-travel-heart use{fill:currentColor;stroke:none}
+.success-heart{font-size:inherit}
+.heart-divider{width:100vw;left:50%;margin-left:0;margin-right:0;transform:translateX(-50%)}
+.hero-title{line-height:1.4;padding-inline:.12em;overflow:visible}
+#venue-photo{display:block;height:auto;object-fit:contain}
+
+
+.heart-icon{color:var(--accent)}.thread-decoration .thread-heart{color:inherit}.ticker .heart-icon,.rsvp-section .heart-icon{color:var(--cream)}

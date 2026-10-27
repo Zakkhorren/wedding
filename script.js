@@ -10,7 +10,25 @@
   const first = config.names?.first || 'Соня';
   const second = config.names?.second || 'Леша';
   document.title = `${first} и ${second} — приглашение на свадьбу`;
-  const text = (sel, val) => { const elem = $(sel); if (elem) elem.textContent = val; };
+  const text = (sel, val) => { const elem = $(sel); if (elem) { elem.textContent = val; replaceHearts(elem); } };
+  function makeHeart() {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'heart-icon'); svg.setAttribute('viewBox', '0 0 92.66 85.85');
+    svg.setAttribute('aria-hidden', 'true');
+    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttribute('href', '#wedding-heart-shape'); svg.append(use); return svg;
+  }
+  function replaceHearts(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), nodes = [];
+    while (walker.nextNode()) if (/[♡♥]/.test(walker.currentNode.nodeValue)) nodes.push(walker.currentNode);
+    for (const node of nodes) {
+      if (node.parentElement.closest('svg,script,style,input,textarea,select,option')) continue;
+      const fragment = document.createDocumentFragment();
+      node.nodeValue.split(/([♡♥])/).forEach(part => fragment.append(/[♡♥]/.test(part) ? makeHeart() : document.createTextNode(part)));
+      node.replaceWith(fragment);
+    }
+  }
+
   text('#hero-date-script', `${first} + ${second} · ${dateLabel}`);
   text('#date-callout', dateLong);
   text('#date-meta', `${weekday}, ${config.dateTime || '16:00'}`);
@@ -80,7 +98,7 @@
     function addRepeat() {
       for (const label of ['приглашение на свадьбу', '♡']) {
         const token = document.createElement('span'); token.className = 'ticker-token';
-        token.textContent = label; group.append(token);
+        if (label === '♡') token.append(makeHeart()); else token.textContent = label; group.append(token);
       }
     }
     addRepeat();
@@ -89,7 +107,7 @@
     for (let i = 1; i < count; i++) addRepeat();
     track.append(group.cloneNode(true));
     const width = group.getBoundingClientRect().width;
-    const speed = window.matchMedia('(max-width: 600px)').matches ? 85 : 65;
+    const speed = window.matchMedia('(max-width: 600px)').matches ? 75 : 65;
     track.style.setProperty('--marquee-width', `${width}px`);
     track.style.setProperty('--marquee-duration', `${width / speed}s`);
   }
@@ -123,7 +141,7 @@
   const sourceRoute = path.getAttribute('d');
   const sourceViewBox = routeSvg.viewBox.baseVal;
   const sourceWidth = sourceViewBox.width, sourceHeight = sourceViewBox.height;
-  const heartShape = travelHeart.querySelector('path');
+  const heartShape = travelHeart.querySelector('use');
   const heartBounds = heartShape.getBBox();
   const heartCenter = { x: heartBounds.x + heartBounds.width / 2, y: heartBounds.y + heartBounds.height / 2 };
   const clamp = value => Math.max(0, Math.min(1, value));
@@ -269,7 +287,7 @@
     } catch {
       error.textContent = 'Не удалось отправить анкету. Пожалуйста, попробуйте позже или напишите организаторам напрямую.';
       error.hidden = false;
-    } finally { button.disabled = false; button.innerHTML = 'отправить ответ <span aria-hidden="true">♡</span>'; }
+    } finally { button.disabled = false; button.textContent = 'отправить ответ '; button.append(makeHeart()); }
   });
   $('#edit-answer')?.addEventListener('click', () => {
     $('#rsvp-success').hidden = true; form.hidden = false;
