@@ -310,6 +310,24 @@ test("Parking approvals enforce 8 total, stale buttons and unauthorized admins c
   );
   db.close();
 });
+test("Rejected parking can be reopened by admin, but stale callbacks stay invalid", async () => {
+  const db = database(), env = envFor(db), identityA = await identity(env, { carCount: 1 });
+  await save(env, identityA);
+  const id = identityA.body.submissionId;
+  await callback(env, `p:r:${id}:1`);
+  assert.equal(rows(db)[0].parking_status, "rejected");
+  await command(env, "/parking");
+  const last = telegram.filter((r) => r.method === "sendMessage").at(-1).data;
+  assert.equal(last.reply_markup.inline_keyboard[0][0].text, "Отменить отказ");
+  await callback(env, `p:u:${id}:1`);
+  assert.equal(rows(db)[0].parking_status, "rejected");
+  await callback(env, `p:u:${id}:2`);
+  assert.equal(rows(db)[0].parking_status, "pending");
+  await callback(env, `p:a:${id}:3`);
+  assert.equal(rows(db)[0].parking_status, "approved");
+  assert.equal(rows(db)[0].revision, 4);
+  db.close();
+});
 test("Guest edits preserve approval for drinks/message and reset approval for car count/attendance", async () => {
   const db = database(),
     env = envFor(db),
@@ -357,7 +375,9 @@ test("Existing commands, exact guest sums, companies per drink and CSV continue 
   assert.ok(messages.includes("Ожидают ответа: 1 компаний"));
   const csv = telegram.filter((r) => r.method === "sendDocument").at(-1)
     .data.document;
-  assert.ok(csv.includes("guestCount") && !csv.includes("edit_token_hash"));
+  assert.ok(csv.startsWith("\ufeffsep=;\r\n"));
+  assert.ok(csv.includes("Количество гостей") && csv.includes("Статус парковки"));
+  assert.ok(!csv.includes("edit_token_hash"));
   db.close();
 });
 test("Webhook secret/private-admin checks and update-ID replay", async () => {
