@@ -124,3 +124,9 @@
   .author-footer{margin-top:32px;padding-top:22px}
 }
 @media(max-width:600px){.hero-subline>span>.answer-dash{font-size:11.2px}}
+
+/* Message field keeps a single underline, including keyboard focus. */
+#rsvp-form textarea[name=message]{border:0;border-bottom:1px solid rgba(255,251,231,.6);outline:none;box-shadow:none;min-height:48px;height:48px;overflow-y:hidden;resize:none}
+#rsvp-form textarea[name=message]:focus-visible,#rsvp-form textarea[name=message]:focus{outline:none;box-shadow:none;border-bottom-color:var(--cream)}
+.signature{font-size:31.25px}
+.signature .heart-icon{width:30px}

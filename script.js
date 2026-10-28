@@ -281,10 +281,10 @@
   function resizeMessage() {
     const textarea = form?.elements.message;
     if (!textarea) return;
-    if (window.matchMedia('(max-width: 600px)').matches) {
-      textarea.style.height = '0px';
-      textarea.style.height = `${Math.max(48, textarea.scrollHeight)}px`;
-    } else textarea.style.removeProperty('height');
+    textarea.style.height = '0px';
+    const style = getComputedStyle(textarea);
+    const borders = parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
+    textarea.style.height = `${Math.max(48, textarea.scrollHeight + borders)}px`;
   }
   form?.elements.message.addEventListener('input', resizeMessage);
   window.addEventListener('resize', resizeMessage, { passive: true });
