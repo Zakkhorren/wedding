@@ -22,7 +22,7 @@
       <div class="hero-copy">
         <p class="hero-kicker reveal">наконец-то...</p>
         <h1 id="hero-title" class="hero-title reveal">МЫ ЖЕНИМСЯ</h1>
-        <div class="hero-subline reveal"><span>интересно, кто будет плакать,<br /> когда мы вырастем?</span><span class="hero-answer"><span class="answer-dash">—</span> мы будем :)</span></div>
+        <div class="hero-subline reveal"><span><span class="answer-dash">—</span> интересно, кто будет плакать,<br /> когда мы вырастем?</span><span class="hero-answer"><span class="answer-dash">—</span> мы будем :)</span></div>
       </div>
       <div class="hero-photo-wrap reveal"><img id="hero-couple-photo" src="assets/couple.png" width="2229" height="2296" alt="Соня и Леша в детстве" /></div>
       <div class="hero-date-script reveal" id="hero-date-script">Соня + Леша · 23.01.2027</div>
@@ -71,6 +71,11 @@
       <p class="venue-name reveal" id="venue-name">Поселок Новобутаково</p>
       <p class="venue-address reveal" id="venue-address">поселок Новобутаково 44с1</p>
       <a class="hand-link venue-map reveal" id="venue-map" href="https://yandex.ru/maps/?mode=search&amp;text=%D0%BF%D0%BE%D1%81%D0%B5%D0%BB%D0%BE%D0%BA%20%D0%9D%D0%BE%D0%B2%D0%BE%D0%B1%D1%83%D1%82%D0%B0%D0%BA%D0%BE%D0%B2%D0%BE%2044%D1%811" target="_blank" rel="noopener noreferrer">посмотреть на карте <svg class="arrow-icon arrow-diagonal" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a>
+      <aside class="parking-note">
+        <h3>Немного о парковке</h3>
+        <p>Возле площадки предусмотрено всего 3 парковочных места. Если планируете приехать на машине, пожалуйста, укажите это в анкете.</p>
+        <p>Мы заранее согласуем, кому сможем предоставить место, и сообщим вам отдельно.</p>
+      </aside>
     </section>
 
     <section class="dress-section paper section-shell" id="dress-code">
@@ -105,6 +110,15 @@
           </fieldset>
           <div class="conditional" id="attending-fields">
             <label class="form-block"><span>Придёте не одни? Напишите имена гостей</span><input name="additionalGuests" type="text" placeholder="если планируете прийти с парой или семьёй" maxlength="250" /></label>
+            <div id="parking-fields" class="conditional" hidden>
+              <fieldset class="form-block"><legend>Планируете приехать на автомобиле?</legend>
+                <label class="option"><input type="radio" name="parking" value="yes" disabled /><span>Да, понадобится парковочное место</span></label>
+                <label class="option"><input type="radio" name="parking" value="no" disabled /><span>Нет, приеду без машины</span></label>
+                <label class="option"><input type="radio" name="parking" value="unknown" disabled /><span>Пока не знаю</span></label>
+              </fieldset>
+              <label class="form-block" id="parking-count" hidden><span>Сколько машин будет от вашей компании?</span><input name="carCount" type="number" min="1" step="1" inputmode="numeric" value="1" disabled aria-describedby="parking-help" /></label>
+              <p class="parking-help" id="parking-help">Это заявка на парковку, а не подтвержденная бронь. Организаторы отдельно сообщат о наличии места.</p>
+            </div>
             <fieldset class="form-block"><legend>Ваши предпочтения по напиткам <small>(можно несколько)</small></legend>
               <label class="option"><input type="checkbox" name="drinks" value="Игристое" /><span>Игристое</span></label>
               <label class="option"><input type="checkbox" name="drinks" value="Вино белое" /><span>Вино белое</span></label>
@@ -127,6 +141,11 @@
         <div id="rsvp-success" class="rsvp-success" role="status" hidden><div class="success-heart"><svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></div><h3>Спасибо за ответ!</h3><p id="success-message"></p><button class="edit-answer" id="edit-answer" type="button">изменить ответ <svg class="arrow-icon arrow-diagonal" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></button></div>
         <div class="footer-line thread-decoration" aria-hidden="true"><svg class="thread-line" viewBox="0 0 1000 120" preserveAspectRatio="none"><path d="M0 8 Q500 180 1000 8"/></svg><svg class="thread-heart heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></div>
         <p class="goodbye reveal">до скорой встречи!</p><p class="signature" id="signature">ваши Соня и Леша <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></p>
+        <footer class="author-footer">
+          <p class="author-love">с любовью к деталям <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></p>
+          <p class="author-credit">Дизайн и разработка — Ксения</p>
+          <p class="author-links"><a href="https://zakkhorren.github.io/ksenia-portfolio/" target="_blank" rel="noopener noreferrer">Портфолио <svg class="arrow-icon arrow-diagonal" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a><span aria-hidden="true"> · </span><a href="https://t.me/zakkhorren" target="_blank" rel="noopener noreferrer">Написать мне <svg class="arrow-icon arrow-diagonal" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a></p>
+        </footer>
       </div>
     </section>
   </main>

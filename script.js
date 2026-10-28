@@ -290,10 +290,25 @@
   window.addEventListener('resize', resizeMessage, { passive: true });
   document.fonts.ready.then(resizeMessage);
   resizeMessage();
+  function syncParking() {
+    const attendingYes = form.querySelector('input[name="attending"]:checked')?.value === 'Да, конечно!';
+    const parkingFields = $('#parking-fields');
+    parkingFields.hidden = !attendingYes;
+    parkingFields.querySelectorAll('[name="parking"]').forEach(input => {
+      input.disabled = !attendingYes;
+      if (!attendingYes) input.checked = false;
+    });
+    const needsSpace = attendingYes && form.querySelector('[name="parking"]:checked')?.value === 'yes';
+    $('#parking-count').hidden = !needsSpace;
+    form.elements.carCount.disabled = !needsSpace;
+    if (!needsSpace) form.elements.carCount.value = '1';
+  }
+  syncParking();
   form?.addEventListener('change', () => {
     const attending = form.querySelector('input[name="attending"]:checked')?.value || '';
     attendingGroup.classList.toggle('inactive', attending && attending !== 'Да, конечно!');
     attendingGroup.querySelectorAll('input, textarea').forEach(el => { el.disabled = !!attending && attending !== 'Да, конечно!'; });
+    syncParking();
     $('#form-error').hidden = true;
   });
   form?.addEventListener('submit', async e => {
@@ -309,8 +324,16 @@
     }
     if ((f.get('website') || '').toString().trim()) { error.textContent = 'Не удалось отправить ответ.'; error.hidden = false; return; }
     const attendingYes = attending === 'Да, конечно!';
+    const parking = attendingYes ? (f.get('parking') || '').toString() : '';
+    const carCount = parking === 'yes' ? Number(f.get('carCount')) : null;
+    if (parking === 'yes' && (!Number.isSafeInteger(carCount) || carCount < 1)) {
+      error.textContent = 'Пожалуйста, укажите количество машин — целое число от 1.';
+      error.hidden = false; form.elements.carCount.focus(); return;
+    }
     const answer = {
       name, attending,
+      parking: parking || null,
+      carCount,
       additionalGuests: attendingYes ? (f.get('additionalGuests') || '').toString().trim() : '',
       drinks: attendingYes ? f.getAll('drinks').map(String) : [],
       otherDrink: attendingYes ? (f.get('otherDrink') || '').toString().trim() : '',
