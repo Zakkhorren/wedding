@@ -1,0 +1,18 @@
+﻿{
+  // Copy to wrangler.local.jsonc, replace ONLY with a separate test DB binding first.
+  "name": "wedding-rsvp-api-test",
+  "main": "wedding-rsvp-api.js",
+  "compatibility_date": "2026-10-28",
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "wedding-rsvp-db-test",
+    "database_id": "SET_TEST_D1_DATABASE_ID",
+    "migrations_dir": "migrations"
+  }],
+  "vars": {
+    "ALLOWED_ORIGIN": "https://zakkhorren.github.io",
+    "ENABLE_TEST_DELETIONS": "false"
+  },
+  "triggers": {"crons": ["* * * * *"]},
+  "observability": {"enabled": false}
+}

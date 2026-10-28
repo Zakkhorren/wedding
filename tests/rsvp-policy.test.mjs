@@ -1,4 +1,4 @@
-﻿import test from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
 import {YES, NO, LATER, normalizeAnswer, nextParkingStatus, summarize, describeChanges, exportCsv, editKeyHash, verifyEditKey} from '../worker/rsvp-policy.mjs';
 const answer = (fields={}) => normalizeAnswer({name:'Семья',attending:YES,guestCount:3,additionalGuests:'Два имени, еще запятая',drinks:['Виски','Ром'],otherDrink:'Сидр',parking:'yes',carCount:2,message:'До встречи',consent:true,...fields});
@@ -19,8 +19,8 @@ test('Parking request can exceed capacity, but only changed car count/choice res
   assert.equal(answer({carCount:9}).carCount,9);
   assert.equal(nextParkingStatus(before,answer({message:'Новое',drinks:['Ром'],guestCount:2})),'approved');
   assert.equal(nextParkingStatus(before,answer({carCount:1})),'pending');
-  assert.equal(nextParkingStatus(before,answer({parking:'no'})),'none');
-  assert.equal(nextParkingStatus(before,answer({attending:NO})),'none');
+  assert.equal(nextParkingStatus(before,answer({parking:'no'})),'not_requested');
+  assert.equal(nextParkingStatus(before,answer({attending:NO})),'not_requested');
 });
 test('Statistics count current records and companies per drink, never guests per drink', () => {
   const rows=[{answer:answer({drinks:['Виски','Виски'],carCount:2}),parkingStatus:'approved'},{answer:answer({guestCount:2,carCount:1}),parkingStatus:'pending'},{answer:answer({attending:NO})},{answer:answer({attending:LATER})}];

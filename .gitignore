@@ -1,0 +1,12 @@
+node_modules/
+.qa/
+.wrangler/
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+worker/wrangler.local.*
+worker/.dev.vars*
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Техническая проверка RSVP API v2</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body class="rsvp-section">
+    <main class="rsvp-wrap">
+      <h1>Техническая проверка API v2</h1>
+      <p>
+        Это отдельный стенд для организатора. Основная анкета сайта остаётся в
+        демо-режиме. Используйте тестовый Worker и тестовую базу.
+      </p>
+      <label class="form-block"
+        ><span>HTTPS endpoint с окончанием /rsvp</span
+        ><input
+          id="endpoint"
+          type="text"
+          placeholder="https://ваш-тестовый-worker.workers.dev/rsvp"
+          autocomplete="off"
+      /></label>
+      <label class="form-block"
+        ><span>Публичный Turnstile sitekey (не secret key)</span
+        ><input id="sitekey" type="text" autocomplete="off"
+      /></label>
+      <button id="connect" type="button" class="submit-button">
+        Подключить стенд
+      </button>
+      <form id="test-form" hidden>
+        <fieldset id="answer-fields" class="form-block">
+          <label class="form-block"
+            ><span>Имя представителя компании</span
+            ><input name="name" type="text" maxlength="120" required
+          /></label>
+          <fieldset class="form-block">
+            <legend>Присутствие</legend>
+            <label class="option"
+              ><input
+                name="attending"
+                type="radio"
+                value="Да, конечно!"
+                checked
+              /><span>Да</span></label
+            >
+            <label class="option"
+              ><input
+                name="attending"
+                type="radio"
+                value="К сожалению, нет"
+              /><span>Нет</span></label
+            >
+            <label class="option"
+              ><input
+                name="attending"
+                type="radio"
+                value="Отвечу чуть позже"
+              /><span>Позже</span></label
+            >
+          </fieldset>
+          <label class="form-block"
+            ><span>Количество людей, включая представителя</span
+            ><input
+              name="guestCount"
+              type="number"
+              min="1"
+              step="1"
+              value="1"
+              required
+          /></label>
+          <label class="form-block"
+            ><span>Имена остальных</span
+            ><input name="additionalGuests" type="text" maxlength="250"
+          /></label>
+          <fieldset class="form-block" id="test-drinks">
+            <legend>Напитки компании</legend>
+          </fieldset>
+          <label class="form-block"
+            ><span>Другой напиток</span
+            ><input name="otherDrink" type="text" maxlength="250"
+          /></label>
+          <fieldset class="form-block">
+            <legend>Парковка</legend>
+            <label class="option"
+              ><input name="parking" type="radio" value="yes" /><span
+                >Нужна</span
+              ></label
+            >
+            <label class="option"
+              ><input name="parking" type="radio" value="no" checked /><span
+                >Не нужна</span
+              ></label
+            >
+            <label class="option"
+              ><input name="parking" type="radio" value="unknown" /><span
+                >Не знаю</span
+              ></label
+            >
+          </fieldset>
+          <label class="form-block"
+            ><span>Запрашиваемые машины</span
+            ><input
+              name="carCount"
+              type="number"
+              min="1"
+              step="1"
+              value="1"
+              required
+          /></label>
+          <label class="form-block"
+            ><span>Сообщение</span
+            ><textarea name="message" rows="2" maxlength="2000"></textarea>
+          </label>
+          <label class="consent"
+            ><input name="consent" type="checkbox" required /><span
+              >Разрешаю сохранить эти тестовые ответы.</span
+            ></label
+          >
+        </fieldset>
+        <div id="turnstile-test"></div>
+        <button id="save" class="submit-button" type="submit">
+          Сохранить / повторить запрос
+        </button>
+        <button id="restore" class="edit-answer" type="button">
+          Загрузить актуальную запись из базы
+        </button>
+      </form>
+      <p id="status" role="status"></p>
+      <label class="form-block" id="link-wrap" hidden
+        ><span>Конфиденциальная ссылка редактирования — не публикуйте её</span
+        ><input id="edit-link" type="text" readonly autocomplete="off"
+      /></label>
+      <button id="new-answer" class="edit-answer" type="button" hidden>
+        Создать новую анкету после удаления
+      </button>
+      <script type="module">
+        import { openRsvpSession } from "../rsvp-session.mjs";
+        import { DRINKS } from "../worker/rsvp-policy.mjs";
+        const $ = (s) => document.querySelector(s),
+          form = $("#test-form");
+        for (const drink of DRINKS) {
+          const label = document.createElement("label");
+          label.className = "option";
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          input.name = "drinks";
+          input.value = drink;
+          const span = document.createElement("span");
+          span.textContent = drink;
+          label.append(input, span);
+          $("#test-drinks").append(label);
+        }
+        const initialPageUrl = location.href;
+        let session,
+          widget,
+          token = "",
+          sentAnswer = null;
+        const status = (value) => {
+          $("#status").textContent = value;
+        };
+        function link() {
+          $("#edit-link").value = session.editLink();
+          $("#link-wrap").hidden = false;
+        }
+        function fill(answer) {
+          for (const [key, value] of Object.entries(answer)) {
+            const input = form.elements[key];
+            if (!input) continue;
+            if (key === "guestCount" || key === "carCount") {
+              input.value = Math.max(1, Number(value) || 1);
+            } else if (key === "drinks") {
+              form
+                .querySelectorAll("[name=drinks]")
+                .forEach((e) => (e.checked = value.includes(e.value)));
+            } else if (input instanceof RadioNodeList) {
+              input.value = value || "";
+            } else if (input.type === "checkbox") input.checked = !!value;
+            else input.value = value ?? "";
+          }
+        }
+        async function captcha() {
+          if (window.turnstile) return;
+          await new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src =
+              "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.append(script);
+          });
+        }
+        function showError(error) {
+          const code = error?.code || "REQUEST_FAILED";
+          status("Ошибка: " + code + ". Успешное сохранение не подтверждено.");
+          if (["RESPONSE_DELETED", "STALE_IDENTITY"].includes(code))
+            $("#new-answer").hidden = false;
+        }
+        $("#connect").onclick = async () => {
+          try {
+            const imported = new URLSearchParams(location.hash.slice(1)).has(
+              "rsvp_id",
+            );
+            if (imported) $("#connect").disabled = true;
+            session = await openRsvpSession({
+              endpoint: $("#endpoint").value.trim(),
+              pageUrl: initialPageUrl,
+            });
+            form.hidden = false;
+            link();
+            const saved = await session.restore();
+            if (saved) fill(saved.answer);
+            await captcha();
+            widget = turnstile.render("#turnstile-test", {
+              sitekey: $("#sitekey").value.trim(),
+              action: "rsvp",
+              callback: (value) => {
+                token = value;
+              },
+              "expired-callback": () => {
+                token = "";
+              },
+              "error-callback": () => {
+                token = "";
+              },
+            });
+            $("#connect").disabled = true;
+            status(
+              saved
+                ? "Анкета загружена."
+                : "Новая тестовая анкета подготовлена; в базе ещё не сохранена.",
+            );
+          } catch (error) {
+            showError(error);
+          }
+        };
+        form.onsubmit = async (event) => {
+          event.preventDefault();
+          try {
+            if (!token) throw { code: "TURNSTILE_RETRY" };
+            if (!sentAnswer) {
+              const data = new FormData(form);
+              sentAnswer = {
+                name: data.get("name"),
+                attending: data.get("attending"),
+                guestCount: Number(data.get("guestCount")),
+                additionalGuests: data.get("additionalGuests"),
+                drinks: data.getAll("drinks"),
+                otherDrink: data.get("otherDrink"),
+                parking: data.get("parking"),
+                carCount: Number(data.get("carCount")),
+                message: data.get("message"),
+                consent: !!data.get("consent"),
+              };
+            }
+            $("#answer-fields").disabled = true;
+            $("#save").disabled = true;
+            const result = await session.save(sentAnswer, async () => token);
+            sentAnswer = null;
+            $("#answer-fields").disabled = false;
+            status(
+              `База подтвердила сохранение. Версия ${result.revision}; парковка: ${result.parkingStatus}.`,
+            );
+            link();
+          } catch (error) {
+            showError(error);
+          } finally {
+            token = "";
+            if (widget !== undefined) turnstile.reset(widget);
+            $("#save").disabled = false;
+          }
+        };
+        $("#restore").onclick = async () => {
+          try {
+            const saved = await session.restore({ discardPending: true });
+            if (!saved) {
+              status(
+                "В базе пока нет анкеты. Повторите исходную отправку с новым токеном.",
+              );
+              return;
+            }
+            fill(saved.answer);
+            sentAnswer = null;
+            $("#answer-fields").disabled = false;
+            link();
+            status("Актуальная версия загружена. Можно редактировать.");
+          } catch (error) {
+            showError(error);
+          }
+        };
+        $("#new-answer").onclick = async () => {
+          if (!confirm("Создать новую анкету с новым ID?")) return;
+          try {
+            if (session) await session.startNewAfterDeletion(true);
+            else
+              session = await openRsvpSession({
+                endpoint: $("#endpoint").value.trim(),
+                pageUrl: initialPageUrl,
+                confirmNewAfterDeletedLink: true,
+              });
+            sentAnswer = null;
+            $("#answer-fields").disabled = false;
+            $("#new-answer").hidden = true;
+            form.hidden = false;
+            if (widget === undefined) {
+              await captcha();
+              widget = turnstile.render("#turnstile-test", {
+                sitekey: $("#sitekey").value.trim(),
+                action: "rsvp",
+                callback: (value) => {
+                  token = value;
+                },
+                "expired-callback": () => {
+                  token = "";
+                },
+                "error-callback": () => {
+                  token = "";
+                },
+              });
+            }
+            link();
+            status("Создан новый ID. Ответ ещё не отправлен.");
+          } catch (error) {
+            showError(error);
+          }
+        };
+      </script>
+    </main>
+  </body>
+</html>
