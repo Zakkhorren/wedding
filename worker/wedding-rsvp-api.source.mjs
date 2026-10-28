@@ -179,7 +179,8 @@ function parkingButtons(row) {
         },
       ],
     ];
-  if (row.parking_status === "rejected") return [];
+  if (row.parking_status === "rejected")
+    return [[{ text: "Отменить отказ", callback_data: `p:u:${row.id}:${row.revision}` }]];
   return [
     [
       { text: "Подтвердить", callback_data: `p:a:${row.id}:${row.revision}` },
@@ -551,7 +552,7 @@ async function parkingList(env, chatId, rows) {
 }
 async function parkingAction(env, callback, chatId) {
   const match = String(callback.data || "").match(
-    /^p:([arc]):([a-f0-9-]{36}):(\d{1,15})$/i,
+    /^p:([arcu]):([a-f0-9-]{36}):(\d{1,15})$/i,
   );
   if (!match || !UUID.test(match[2])) return "Некорректная кнопка.";
   const [, rawAction, id, rev] = match,
@@ -563,7 +564,9 @@ async function parkingAction(env, callback, chatId) {
   const expected =
     action === "c"
       ? "parking_status='approved'"
-      : "parking_status NOT IN ('approved','rejected')";
+      : action === "u"
+        ? "parking_status='rejected'"
+        : "parking_status='pending'";
   let result;
   try {
     const changes = await env.DB.batch([
@@ -595,7 +598,9 @@ async function parkingAction(env, callback, chatId) {
     ? "Парковка подтверждена."
     : action === "r"
       ? "Заявка отклонена."
-      : "Подтверждение отменено; заявка снова ожидает решения.";
+      : action === "u"
+        ? "Отказ отменён; заявка снова ожидает решения."
+        : "Подтверждение отменено; заявка снова ожидает решения.";
 }
 async function telegramWebhook(request, env) {
   if (
