@@ -146,46 +146,43 @@ const csvCell = (value) => {
   return '"' + cell.replaceAll('"', '""') + '"';
 };
 function exportCsv(records) {
+  // Excel on Windows with Russian locale commonly expects semicolon-delimited CSV.
+  // The sep= directive is recognized by Excel; BOM preserves UTF-8 Cyrillic.
   const columns = [
-    "id",
-    "name",
-    "attending",
-    "guestCount",
-    "additionalGuests",
-    "drinks",
-    "otherDrink",
-    "parking",
-    "carCount",
-    "parkingStatus",
-    "message",
-    "extraAnswers",
-    "createdAt",
-    "updatedAt",
-    "revision",
+    ["name", "Компания / представитель"],
+    ["attending", "Присутствие"],
+    ["guestCount", "Количество гостей"],
+    ["additionalGuests", "Имена остальных"],
+    ["drinks", "Напитки"],
+    ["otherDrink", "Другой напиток"],
+    ["parking", "Парковка"],
+    ["carCount", "Машин запрошено"],
+    ["parkingStatus", "Статус парковки"],
+    ["message", "Комментарий"],
+    ["createdAt", "Дата ответа"],
+    ["updatedAt", "Дата изменения"],
+    ["id", "ID анкеты"],
+    ["revision", "Версия"],
   ];
-  const metadata = new Set([
-    "id",
-    "parkingStatus",
-    "extraAnswers",
-    "createdAt",
-    "updatedAt",
-    "revision",
-  ]);
-  const lines = [columns.map(csvCell).join(",")];
-  for (const row of records)
-    lines.push(
-      columns
-        .map((key) =>
-          csvCell(
-            metadata.has(key)
-              ? row[key]
-              : Array.isArray(row.answer[key])
-                ? row.answer[key].join("; ")
-                : row.answer[key],
-          ),
-        )
-        .join(","),
-    );
+  const parkingLabels = { yes: "Нужна", no: "Не нужна", unknown: "Пока не знаю" };
+  const statusLabels = {
+    approved: "Подтверждено",
+    pending: "Ожидает решения",
+    rejected: "Отклонено",
+    not_requested: "Не запрашивалась",
+  };
+  const fromRow = (row, key) => {
+    if (key === "parkingStatus") return statusLabels[row.parkingStatus] ?? row.parkingStatus;
+    if (key === "parking") return parkingLabels[row.answer.parking] ?? row.answer.parking ?? "";
+    const value = ["id", "createdAt", "updatedAt", "revision"].includes(key)
+      ? row[key] : row.answer[key];
+    return Array.isArray(value) ? value.join(", ") : value;
+  };
+  const lines = [
+    "sep=;",
+    columns.map(([, label]) => csvCell(label)).join(";"),
+    ...records.map((row) => columns.map(([key]) => csvCell(fromRow(row, key))).join(";")),
+  ];
   return "\ufeff" + lines.join("\r\n");
 }
 async function editKeyHash(id, key) {
@@ -427,7 +424,8 @@ function parkingButtons(row) {
         },
       ],
     ];
-  if (row.parking_status === "rejected") return [];
+  if (row.parking_status === "rejected")
+    return [[{ text: "Отменить отказ", callback_data: `p:u:${row.id}:${row.revision}` }]];
   return [
     [
       { text: "Подтвердить", callback_data: `p:a:${row.id}:${row.revision}` },
@@ -799,7 +797,7 @@ async function parkingList(env, chatId, rows) {
 }
 async function parkingAction(env, callback, chatId) {
   const match = String(callback.data || "").match(
-    /^p:([arc]):([a-f0-9-]{36}):(\d{1,15})$/i,
+    /^p:([arcu]):([a-f0-9-]{36}):(\d{1,15})$/i,
   );
   if (!match || !UUID.test(match[2])) return "Некорректная кнопка.";
   const [, rawAction, id, rev] = match,
@@ -811,7 +809,9 @@ async function parkingAction(env, callback, chatId) {
   const expected =
     action === "c"
       ? "parking_status='approved'"
-      : "parking_status NOT IN ('approved','rejected')";
+      : action === "u"
+        ? "parking_status='rejected'"
+        : "parking_status='pending'";
   let result;
   try {
     const changes = await env.DB.batch([
@@ -843,7 +843,9 @@ async function parkingAction(env, callback, chatId) {
     ? "Парковка подтверждена."
     : action === "r"
       ? "Заявка отклонена."
-      : "Подтверждение отменено; заявка снова ожидает решения.";
+      : action === "u"
+        ? "Отказ отменён; заявка снова ожидает решения."
+        : "Подтверждение отменено; заявка снова ожидает решения.";
 }
 async function telegramWebhook(request, env) {
   if (
