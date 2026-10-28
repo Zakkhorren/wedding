@@ -11,12 +11,12 @@
   const second = config.names?.second || 'Леша';
   document.title = `${first} и ${second} — приглашение на свадьбу`;
   const text = (sel, val) => { const elem = $(sel); if (elem) { elem.textContent = val; replaceHearts(elem); } };
-  function makeHeart() {
+  function makeHeart(outline = false) {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('class', 'heart-icon'); svg.setAttribute('viewBox', '0 0 92.66 85.85');
+    svg.setAttribute('class', outline ? 'heart-icon heart-outline' : 'heart-icon'); svg.setAttribute('viewBox', '0 0 92.66 85.85');
     svg.setAttribute('aria-hidden', 'true');
     const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-    use.setAttribute('href', '#wedding-heart-shape'); svg.append(use); return svg;
+    use.setAttribute('href', outline ? '#wedding-heart-outline' : '#wedding-heart-shape'); svg.append(use); return svg;
   }
   function replaceHearts(root) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), nodes = [];
@@ -35,10 +35,14 @@
   text('#calendar-month', month);
   text('#venue-name', config.venueName || 'Место проведения');
   text('#venue-address', `${config.venueAddress || 'Адрес будет здесь'}${(config.venueAddress || '').includes('Цветочная') ? ' (демо)' : ''}`);
-  text('#signature', `ваши ${first} и ${second} ♡`);
+  const signature = $('#signature');
+  const signatureNames = document.createElement('span');
+  signatureNames.className = 'signature-names';
+  signatureNames.append(document.createTextNode(`${first} и ${second} `), makeHeart(true));
+  signature.replaceChildren(document.createTextNode('ваши '), signatureNames);
   if (config.rsvpDeadline && /^\d{4}-\d{2}-\d{2}$/.test(config.rsvpDeadline)) {
     const deadline = new Date(`${config.rsvpDeadline}T12:00:00`);
-    text('#rsvp-deadline', `ответьте, пожалуйста, до ${new Intl.DateTimeFormat('ru-RU').format(deadline)}`);
+    text('#rsvp-deadline', `Ответьте, пожалуйста, до ${new Intl.DateTimeFormat('ru-RU').format(deadline)}`);
   }
   const map = $('#venue-map');
   if (map) map.href = `https://yandex.ru/maps/?mode=search&text=${encodeURIComponent(config.venueAddress || 'поселок Новобутаково 44с1')}`;
@@ -98,7 +102,7 @@
     function addRepeat() {
       for (const label of ['приглашение на свадьбу', '♡']) {
         const token = document.createElement('span'); token.className = 'ticker-token';
-        if (label === '♡') token.append(makeHeart()); else token.textContent = label; group.append(token);
+        if (label === '♡') token.append(makeHeart(true)); else token.textContent = label; group.append(token);
       }
     }
     addRepeat();
@@ -348,7 +352,7 @@
       $('#rsvp-success').scrollIntoView({ behavior: motionOK ? 'smooth' : 'auto', block: 'center' });
       return;
     }
-    button.disabled = true; button.textContent = 'отправляем...';
+    button.disabled = true; button.textContent = 'Отправляем...';
     try {
       const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(answer) });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -358,7 +362,7 @@
     } catch {
       error.textContent = 'Не удалось отправить анкету. Пожалуйста, попробуйте позже или напишите организаторам напрямую.';
       error.hidden = false;
-    } finally { button.disabled = false; button.textContent = 'отправить ответ '; button.append(makeHeart()); }
+    } finally { button.disabled = false; button.textContent = 'Отправить ответ'; }
   });
   $('#edit-answer')?.addEventListener('click', () => {
     $('#rsvp-success').hidden = true; form.hidden = false;

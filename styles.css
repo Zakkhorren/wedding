@@ -130,3 +130,16 @@
 #rsvp-form textarea[name=message]:focus-visible,#rsvp-form textarea[name=message]:focus{outline:none;box-shadow:none;border-bottom-color:var(--cream)}
 .signature{font-size:31.25px}
 .signature .heart-icon{width:30px}
+
+/* Variant 2: lightweight drawn decoration behind the unchanged photograph. */
+.hero-photo-decoration{position:absolute;z-index:0;left:-20%;top:0;width:140%;height:100%;overflow:visible;fill:none;stroke:var(--slate);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;opacity:.8}
+#hero-couple-photo{position:relative;z-index:1}
+.heart-outline use{fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.parking-note{margin-top:75px}
+.intro-text em{text-decoration:none}
+.signature{font-size:45.3125px}
+.signature .heart-icon{width:43.5px}
+.signature-names{display:inline-block;white-space:nowrap}
+@media(max-width:600px){.parking-note{margin-top:48px}.photo-sparkle-small{display:none}}
+
+@media(max-width:360px){.signature{font-size:43.75px}.signature .heart-icon{width:38.5px}}
