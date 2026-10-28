@@ -9,10 +9,7 @@ window.WEDDING_CONFIG = {
   date: '2027-01-23',
   dateTime: '16:00',
   rsvpDeadline: '2026-12-20',
-  heroImages: [
-    'assets/sonya.png',
-    'assets/lesha.png'
-  ],
+  heroImage: 'assets/couple.png',
   venueImage: 'assets/venue.jpg',
   venueName: 'Поселок Новобутаково',
   venueAddress: 'поселок Новобутаково 44с1',

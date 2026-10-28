@@ -44,7 +44,7 @@
   if (map) map.href = `https://yandex.ru/maps/?mode=search&text=${encodeURIComponent(config.venueAddress || 'поселок Новобутаково 44с1')}`;
   (config.schedule || []).slice(0, 4).forEach((step, i) => { if (Array.isArray(step)) { text(`#timeline-t${i + 1}`, step[0]); const v = $(`.stop-${i + 1} .timeline-text`); if (v) v.textContent = step[1]; } });
 
-  const photos = [ ['#hero-photo-one', config.heroImages?.[0]], ['#hero-photo-two', config.heroImages?.[1]], ['#venue-photo', config.venueImage] ];
+  const photos = [ ['#hero-couple-photo', config.heroImage], ['#venue-photo', config.venueImage] ];
   photos.forEach(([sel, url]) => {
     const img = $(sel);
     if (!img) return;
@@ -213,27 +213,63 @@
   document.fonts.ready.then(layoutRoute);
   layoutRoute();
 
-  // Only text nodes are typographed: form values, URLs and attributes stay intact.
+  // One typography pipeline for static and dynamic text. Attributes and form data
+  // never enter it; bounded groups prevent long unbreakable chains on small screens.
+  const typographyCache = new WeakMap();
+  const forwardWords = new Set('в во с со к ко у о об обо на по за и а но не ни от до из без для при про под над или да ли то'.split(' '));
+  function formatTypography(value) {
+    const plain = value.replace(/\u00a0/g, ' ');
+    const words = [...plain.matchAll(/[А-ЯЁа-яё]+(?:[-‑][А-ЯЁа-яё]+)*/g)];
+    const groups = words.map((_, i) => ({ start: i, end: i }));
+    const joins = new Set();
+    for (let i = 0; i < words.length - 1; i++) {
+      const left = words[i], right = words[i + 1];
+      const gapStart = left.index + left[0].length;
+      if (!/^[ \t]+$/.test(plain.slice(gapStart, right.index))) continue;
+      const a = left[0].toLocaleLowerCase('ru'), b = right[0].toLocaleLowerCase('ru');
+      if (!forwardWords.has(a) && !['бы', 'же'].includes(b) && !(a === 'что' && b === 'вы')) continue;
+      const first = groups[i].start, last = groups[i + 1].end;
+      if (last - first + 1 > 3 || words[last].index + words[last][0].length - words[first].index > 24) continue;
+      for (let n = first; n <= last; n++) groups[n] = { start: first, end: last };
+      joins.add(i);
+    }
+    let result = plain;
+    for (let i = words.length - 2; i >= 0; i--) if (joins.has(i)) {
+      const start = words[i].index + words[i][0].length;
+      result = result.slice(0, start) + '\u00a0' + result.slice(words[i + 1].index);
+    }
+    return result;
+  }
   function typograph(root) {
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const nodes = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode);
+    if (root.nodeType === Node.TEXT_NODE) nodes.push(root);
+    else {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+    }
     for (const node of nodes) {
-      if (!node.parentElement || node.parentElement.closest('script,style,svg,textarea,input,select,option,code,pre,.ticker,[contenteditable]')) continue;
-      const formatted = node.nodeValue.replace(/(?<![А-Яа-яЁё])((?:в|во|на|и|с|со|к|ко|у|по|о|об|от|до|из|за|но|а))[ \t]+(?=[А-Яа-яЁё«„])/giu, '$1\u00a0');
-      if (formatted !== node.nodeValue) node.nodeValue = formatted;
+      if (!node.parentElement || node.parentElement.closest('script,style,svg,textarea,input,select,option,code,pre,[contenteditable]')) continue;
+      const value = node.nodeValue;
+      if (typographyCache.get(node) === value) continue;
+      const formatted = formatTypography(value);
+      if (formatted !== value) node.nodeValue = formatted;
+      typographyCache.set(node, formatted);
     }
   }
-  typograph(document.querySelector('main'));
-  new MutationObserver(records => {
+  const typographyRoot = document.querySelector('main');
+  const typographyOptions = { childList: true, characterData: true, subtree: true };
+  const typographyObserver = new MutationObserver(records => {
+    const changed = new Set();
     for (const record of records) {
-      if (record.type === 'characterData') typograph(record.target.parentElement);
-      else for (const node of record.addedNodes) {
-        if (node.nodeType === Node.ELEMENT_NODE) typograph(node);
-        else if (node.nodeType === Node.TEXT_NODE) typograph(node.parentElement);
-      }
+      if (record.type === 'characterData') changed.add(record.target);
+      else for (const node of record.addedNodes) if (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE) changed.add(node);
     }
-  }).observe(document.querySelector('main'), { childList: true, characterData: true, subtree: true });
+    typographyObserver.disconnect();
+    for (const node of changed) if (typographyRoot.contains(node)) typograph(node);
+    typographyObserver.observe(typographyRoot, typographyOptions);
+  });
+  typograph(typographyRoot);
+  typographyObserver.observe(typographyRoot, typographyOptions);
 
   const form = $('#rsvp-form');
   const attendingGroup = $('#attending-fields');
@@ -242,6 +278,18 @@
   const modeNote = $('#mode-note');
   if (isDemo) modeNote.textContent = 'Демо-режим: ответы пока никуда не отправляются. Для настоящей отправки подключим Telegram или почту.';
   else modeNote.textContent = 'Ваш ответ будет передан организаторам праздника.';
+  function resizeMessage() {
+    const textarea = form?.elements.message;
+    if (!textarea) return;
+    if (window.matchMedia('(max-width: 600px)').matches) {
+      textarea.style.height = '0px';
+      textarea.style.height = `${Math.max(48, textarea.scrollHeight)}px`;
+    } else textarea.style.removeProperty('height');
+  }
+  form?.elements.message.addEventListener('input', resizeMessage);
+  window.addEventListener('resize', resizeMessage, { passive: true });
+  document.fonts.ready.then(resizeMessage);
+  resizeMessage();
   form?.addEventListener('change', () => {
     const attending = form.querySelector('input[name="attending"]:checked')?.value || '';
     attendingGroup.classList.toggle('inactive', attending && attending !== 'Да, конечно!');
@@ -265,7 +313,7 @@
       name, attending,
       additionalGuests: attendingYes ? (f.get('additionalGuests') || '').toString().trim() : '',
       drinks: attendingYes ? f.getAll('drinks').map(String) : [],
-      food: attendingYes ? (f.get('food') || '').toString().trim() : '',
+      otherDrink: attendingYes ? (f.get('otherDrink') || '').toString().trim() : '',
       message: (f.get('message') || '').toString().trim(),
       createdAt: new Date().toISOString(),
       consent: true
@@ -291,6 +339,7 @@
   });
   $('#edit-answer')?.addEventListener('click', () => {
     $('#rsvp-success').hidden = true; form.hidden = false;
+    resizeMessage();
     form.scrollIntoView({ behavior: motionOK ? 'smooth' : 'auto', block: 'start' });
   });
 })();

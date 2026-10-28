@@ -36,7 +36,7 @@ export default {
       `Присутствие: ${attending}`,
       `Доп. гости: ${s(payload.additionalGuests,250)||'—'}`,
       `Напитки: ${drinks||'—'}`,
-      `Пожелания по меню: ${s(payload.food,1000)||'—'}`,
+      `Свой напиток: ${s(payload.otherDrink,250)||'—'}`,
       `Сообщение: ${s(payload.message,2000)||'—'}`
     ].join('\n').slice(0,3900);
     try {

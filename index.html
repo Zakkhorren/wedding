@@ -24,18 +24,9 @@
         <h1 id="hero-title" class="hero-title reveal">МЫ ЖЕНИМСЯ</h1>
         <div class="hero-subline reveal"><span>интересно, кто будет плакать,<br /> когда мы вырастем?</span><span class="hero-answer"><span class="answer-dash">—</span> мы будем :)</span></div>
       </div>
-      <div class="hero-portraits reveal" aria-label="Место для фотографий пары">
-        <div class="portrait portrait-one" id="photo-bride">
-          <img id="hero-photo-one" src="assets/sonya.png" alt="Соня в детстве" />
-          <div class="portrait-fallback" aria-hidden="true"><svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg><small>фото<br />невесты</small></div>
-        </div>
-        <div class="portrait portrait-two" id="photo-groom">
-          <img id="hero-photo-two" src="assets/lesha.png" alt="Леша в детстве" />
-          <div class="portrait-fallback" aria-hidden="true"><svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg><small>фото<br />жениха</small></div>
-        </div>
-      </div>
+      <div class="hero-photo-wrap reveal"><img id="hero-couple-photo" src="assets/couple.png" width="2229" height="2296" alt="Соня и Леша в детстве" /></div>
       <div class="hero-date-script reveal" id="hero-date-script">Соня + Леша · 23.01.2027</div>
-      <div class="scroll-hint">листай вниз <span aria-hidden="true">↓</span></div>
+      <div class="scroll-hint">листай вниз <span aria-hidden="true"><svg class="arrow-icon arrow-down" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></span></div>
       <div class="ticker" aria-label="Приглашение на свадьбу"><div class="ticker-track" aria-hidden="true"><span>приглашение на свадьбу <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg> приглашение на свадьбу <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg> приглашение на свадьбу <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg> приглашение на свадьбу <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></span><span>приглашение на свадьбу <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg> приглашение на свадьбу <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg> приглашение на свадьбу <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg> приглашение на свадьбу <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></span></div></div>
     </section>
 
@@ -49,7 +40,7 @@
         <div class="calendar-grid" id="calendar-grid" aria-label="Календарь даты свадьбы"></div>
         <svg class="calendar-circle" viewBox="0 0 100 75" aria-hidden="true"><path d="M13 44C1 22 24 5 53 8c37 1 48 23 33 46C71 73 23 69 13 44Z" /></svg>
       </div>
-      <button class="hand-link calendar-save" id="save-date" type="button">сохранить дату ↗</button>
+      <button class="hand-link calendar-save" id="save-date" type="button">сохранить дату <svg class="arrow-icon arrow-diagonal" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></button>
     </section>
 
     <section class="timeline-section paper section-shell" id="timing">
@@ -79,7 +70,7 @@
       </div>
       <p class="venue-name reveal" id="venue-name">Поселок Новобутаково</p>
       <p class="venue-address reveal" id="venue-address">поселок Новобутаково 44с1</p>
-      <a class="hand-link venue-map reveal" id="venue-map" href="https://yandex.ru/maps/?mode=search&amp;text=%D0%BF%D0%BE%D1%81%D0%B5%D0%BB%D0%BE%D0%BA%20%D0%9D%D0%BE%D0%B2%D0%BE%D0%B1%D1%83%D1%82%D0%B0%D0%BA%D0%BE%D0%B2%D0%BE%2044%D1%811" target="_blank" rel="noopener noreferrer">посмотреть на карте ↗</a>
+      <a class="hand-link venue-map reveal" id="venue-map" href="https://yandex.ru/maps/?mode=search&amp;text=%D0%BF%D0%BE%D1%81%D0%B5%D0%BB%D0%BE%D0%BA%20%D0%9D%D0%BE%D0%B2%D0%BE%D0%B1%D1%83%D1%82%D0%B0%D0%BA%D0%BE%D0%B2%D0%BE%2044%D1%811" target="_blank" rel="noopener noreferrer">посмотреть на карте <svg class="arrow-icon arrow-diagonal" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a>
     </section>
 
     <section class="dress-section paper section-shell" id="dress-code">
@@ -118,10 +109,13 @@
               <label class="option"><input type="checkbox" name="drinks" value="Игристое" /><span>Игристое</span></label>
               <label class="option"><input type="checkbox" name="drinks" value="Вино белое" /><span>Вино белое</span></label>
               <label class="option"><input type="checkbox" name="drinks" value="Вино красное" /><span>Вино красное</span></label>
-              <label class="option"><input type="checkbox" name="drinks" value="Крепкие напитки" /><span>Крепкие напитки</span></label>
+              <label class="option"><input type="checkbox" name="drinks" value="Виски" /><span>Виски</span></label>
+              <label class="option"><input type="checkbox" name="drinks" value="Коньяк" /><span>Коньяк</span></label>
+              <label class="option"><input type="checkbox" name="drinks" value="Водка" /><span>Водка</span></label>
+              <label class="option"><input type="checkbox" name="drinks" value="Ром" /><span>Ром</span></label>
               <label class="option"><input type="checkbox" name="drinks" value="Безалкогольное" /><span>Безалкогольное</span></label>
             </fieldset>
-            <label class="form-block"><span>Есть ли пожелания по меню?</span><textarea name="food" rows="2" maxlength="1000" placeholder="можно оставить пустым"></textarea></label>
+            <label class="form-block"><span>Не нашли любимый напиток? Напишите свой вариант</span><input name="otherDrink" type="text" maxlength="250" placeholder="Ваш вариант напитка" /></label>
           </div>
           <label class="form-block"><span>Хотите нам что-нибудь написать? <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></span><textarea name="message" rows="2" maxlength="2000" placeholder="нам будет очень приятно"></textarea></label>
           <label class="consent"><input type="checkbox" name="consent" required /><span>Согласен(на) передать эти ответы организаторам праздника для учета гостей. <b>*</b></span></label>
@@ -130,12 +124,12 @@
           <p id="form-error" class="form-error" role="alert" hidden></p>
           <button type="submit" id="rsvp-submit" class="submit-button">отправить ответ <span aria-hidden="true"><svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></span></button>
         </form>
-        <div id="rsvp-success" class="rsvp-success" role="status" hidden><div class="success-heart"><svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></div><h3>Спасибо за ответ!</h3><p id="success-message"></p><button class="edit-answer" id="edit-answer" type="button">изменить ответ ↗</button></div>
+        <div id="rsvp-success" class="rsvp-success" role="status" hidden><div class="success-heart"><svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></div><h3>Спасибо за ответ!</h3><p id="success-message"></p><button class="edit-answer" id="edit-answer" type="button">изменить ответ <svg class="arrow-icon arrow-diagonal" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></button></div>
         <div class="footer-line thread-decoration" aria-hidden="true"><svg class="thread-line" viewBox="0 0 1000 120" preserveAspectRatio="none"><path d="M0 8 Q500 180 1000 8"/></svg><svg class="thread-heart heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></div>
         <p class="goodbye reveal">до скорой встречи!</p><p class="signature" id="signature">ваши Соня и Леша <svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></p>
       </div>
     </section>
   </main>
-  <a href="#top" class="back-to-top" aria-label="В начало страницы">↑</a>
+  <a href="#top" class="back-to-top" aria-label="В начало страницы"><svg class="arrow-icon arrow-up" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a>
 </body>
 </html>
