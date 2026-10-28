@@ -144,4 +144,5 @@
 
 @media(max-width:360px){.signature{font-size:43.75px}.signature .heart-icon{width:38.5px}}
 
-.wishes-text .heart-icon{color:var(--ink)}
+.wishes-text .heart-icon,.wishes-text .heart-icon use{color:var(--ink)}
+.wishes-text .heart-outline use{fill:none;stroke:var(--ink)}
