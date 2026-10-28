@@ -144,46 +144,43 @@ const csvCell = (value) => {
   return '"' + cell.replaceAll('"', '""') + '"';
 };
 export function exportCsv(records) {
+  // Excel on Windows with Russian locale commonly expects semicolon-delimited CSV.
+  // The sep= directive is recognized by Excel; BOM preserves UTF-8 Cyrillic.
   const columns = [
-    "id",
-    "name",
-    "attending",
-    "guestCount",
-    "additionalGuests",
-    "drinks",
-    "otherDrink",
-    "parking",
-    "carCount",
-    "parkingStatus",
-    "message",
-    "extraAnswers",
-    "createdAt",
-    "updatedAt",
-    "revision",
+    ["name", "Компания / представитель"],
+    ["attending", "Присутствие"],
+    ["guestCount", "Количество гостей"],
+    ["additionalGuests", "Имена остальных"],
+    ["drinks", "Напитки"],
+    ["otherDrink", "Другой напиток"],
+    ["parking", "Парковка"],
+    ["carCount", "Машин запрошено"],
+    ["parkingStatus", "Статус парковки"],
+    ["message", "Комментарий"],
+    ["createdAt", "Дата ответа"],
+    ["updatedAt", "Дата изменения"],
+    ["id", "ID анкеты"],
+    ["revision", "Версия"],
   ];
-  const metadata = new Set([
-    "id",
-    "parkingStatus",
-    "extraAnswers",
-    "createdAt",
-    "updatedAt",
-    "revision",
-  ]);
-  const lines = [columns.map(csvCell).join(",")];
-  for (const row of records)
-    lines.push(
-      columns
-        .map((key) =>
-          csvCell(
-            metadata.has(key)
-              ? row[key]
-              : Array.isArray(row.answer[key])
-                ? row.answer[key].join("; ")
-                : row.answer[key],
-          ),
-        )
-        .join(","),
-    );
+  const parkingLabels = { yes: "Нужна", no: "Не нужна", unknown: "Пока не знаю" };
+  const statusLabels = {
+    approved: "Подтверждено",
+    pending: "Ожидает решения",
+    rejected: "Отклонено",
+    not_requested: "Не запрашивалась",
+  };
+  const fromRow = (row, key) => {
+    if (key === "parkingStatus") return statusLabels[row.parkingStatus] ?? row.parkingStatus;
+    if (key === "parking") return parkingLabels[row.answer.parking] ?? row.answer.parking ?? "";
+    const value = ["id", "createdAt", "updatedAt", "revision"].includes(key)
+      ? row[key] : row.answer[key];
+    return Array.isArray(value) ? value.join(", ") : value;
+  };
+  const lines = [
+    "sep=;",
+    columns.map(([, label]) => csvCell(label)).join(";"),
+    ...records.map((row) => columns.map(([key]) => csvCell(fromRow(row, key))).join(";")),
+  ];
   return "\ufeff" + lines.join("\r\n");
 }
 export async function editKeyHash(id, key) {
