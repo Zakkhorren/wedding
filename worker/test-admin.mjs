@@ -1,4 +1,4 @@
-﻿/** Temporary admin-only handlers. Omitted entirely by the production build switch. */
+/** Temporary admin-only handlers. Omitted entirely by the production build switch. */
 export const TEST_ADMIN_HELP =
   "/delete ID — удалить тестовую анкету с подтверждением\n/clear_test — очистить тестовые анкеты с подтверждением\n";
 export async function handleTestAdmin({
@@ -80,6 +80,9 @@ export async function handleTestAdmin({
       ).bind(tokenHash, adminId, String(chatId)),
       env.DB.prepare(
         "DELETE FROM rsvp_admin_confirmations WHERE response_id IS NOT NULL AND response_id NOT IN (SELECT id FROM rsvp_responses)",
+      ),
+      env.DB.prepare(
+        "DELETE FROM rsvp_lifecycle_confirmations WHERE response_id NOT IN (SELECT id FROM rsvp_responses)",
       ),
     ]);
     const deleted = result[0].results?.length ?? result[0].meta.changes;

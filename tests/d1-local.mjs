@@ -1,4 +1,4 @@
-﻿import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,6 +8,12 @@ export const legacySql = fs
   .replace(/^\uFEFF/, "");
 export const migrationSql = fs
   .readFileSync(path.join(root, "worker/migrations/0001_rsvp_v2.sql"), "utf8")
+  .replace(/^\uFEFF/, "");
+export const archiveMigrationSql = fs
+  .readFileSync(
+    path.join(root, "worker/migrations/0002_archive_lifecycle.sql"),
+    "utf8",
+  )
   .replace(/^\uFEFF/, "");
 export class D1Local {
   constructor(file = ":memory:") {
@@ -86,6 +92,9 @@ export class D1Local {
       throw e;
     }
   }
+  migrateArchive() {
+    this.sqlite.exec(archiveMigrationSql);
+  }
   close() {
     this.sqlite.close();
   }
@@ -94,5 +103,6 @@ export function database() {
   const db = new D1Local();
   db.sqlite.exec(legacySql);
   db.migrate();
+  db.migrateArchive();
   return db;
 }

@@ -1,4 +1,4 @@
-﻿// Prepared client adapter for API v2. Deliberately NOT loaded by the demo site.
+// Prepared client adapter for API v2. Deliberately NOT loaded by the demo site.
 import { normalizeAnswer } from "./worker/rsvp-policy.mjs";
 export class RsvpSessionError extends Error {
   constructor(code) {
@@ -85,6 +85,7 @@ export async function openRsvpSession({
     if (!response.ok) {
       const known = new Set([
         "RESPONSE_NOT_FOUND",
+        "RESPONSE_ARCHIVED",
         "RESPONSE_DELETED",
         "STALE_IDENTITY",
         "EPOCH_CHANGED",

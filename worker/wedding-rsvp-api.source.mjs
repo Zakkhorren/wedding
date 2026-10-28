@@ -1,3 +1,4 @@
+import { handleLifecycleAdmin, LIFECYCLE_HELP } from "./lifecycle-admin.mjs";
 import {
   YES,
   NO,
@@ -170,6 +171,7 @@ async function sendLines(env, chatId, title, lines) {
 }
 function parkingButtons(row) {
   if (row.attending !== YES || row.parking_choice !== "yes") return [];
+  if (row.archived_at) return [];
   if (row.parking_status === "approved")
     return [
       [
@@ -180,7 +182,14 @@ function parkingButtons(row) {
       ],
     ];
   if (row.parking_status === "rejected")
-    return [[{ text: "Отменить отказ", callback_data: `p:u:${row.id}:${row.revision}` }]];
+    return [
+      [
+        {
+          text: "Отменить отказ",
+          callback_data: `p:u:${row.id}:${row.revision}`,
+        },
+      ],
+    ];
   return [
     [
       { text: "Подтвердить", callback_data: `p:a:${row.id}:${row.revision}` },
@@ -193,7 +202,7 @@ async function drainOutbox(env) {
   const now = unix(),
     deadline = Date.now() + 18000;
   const { results } = await env.DB.prepare(
-    "SELECT id,payload_json FROM rsvp_outbox WHERE state!='sent' AND next_attempt<=? AND lease_until<=? ORDER BY created_at,id LIMIT 10",
+    "SELECT id,payload_json FROM rsvp_outbox WHERE state IN ('pending','sending') AND EXISTS(SELECT 1 FROM rsvp_responses r WHERE r.id=rsvp_outbox.response_id AND r.archived_at IS NULL) AND next_attempt<=? AND lease_until<=? ORDER BY created_at,id LIMIT 10",
   )
     .bind(now, now)
     .all();
@@ -201,7 +210,7 @@ async function drainOutbox(env) {
     if (Date.now() > deadline) break;
     const lease = unix() + 60;
     const claim = await env.DB.prepare(
-      "UPDATE rsvp_outbox SET state='sending',lease_until=?,attempts=attempts+1 WHERE id=? AND state!='sent' AND next_attempt<=? AND lease_until<=?",
+      "UPDATE rsvp_outbox SET state='sending',lease_until=?,attempts=attempts+1 WHERE id=? AND state IN ('pending','sending') AND EXISTS(SELECT 1 FROM rsvp_responses r WHERE r.id=rsvp_outbox.response_id AND r.archived_at IS NULL) AND next_attempt<=? AND lease_until<=?",
     )
       .bind(lease, row.id, unix(), unix())
       .run();
@@ -290,6 +299,7 @@ async function publicApi(request, env, url, ctx) {
       if (!row) throw new HttpError(404, "RESPONSE_NOT_FOUND");
       if (!(await verifyEditKey(id, key, row.edit_token_hash)))
         throw new HttpError(403, "EDIT_KEY_INVALID");
+      if (row.archived_at) throw new HttpError(409, "RESPONSE_ARCHIVED");
       return json(recordResult(row, meta.epoch));
     }
     if (url.pathname !== "/rsvp")
@@ -326,6 +336,7 @@ async function publicApi(request, env, url, ctx) {
       .first();
     if (before && !(await verifyEditKey(id, key, before.edit_token_hash)))
       throw new HttpError(403, "EDIT_KEY_INVALID");
+    if (before?.archived_at) throw new HttpError(409, "RESPONSE_ARCHIVED");
     const payloadHash = await digest(
       JSON.stringify({ id, revision: raw.revision, epoch: raw.epoch, answer }),
     );
@@ -389,7 +400,7 @@ async function publicApi(request, env, url, ctx) {
       guest_count=excluded.guest_count,drinks_json=excluded.drinks_json,custom_drink=excluded.custom_drink,parking_choice=excluded.parking_choice,
       cars_requested=excluded.cars_requested,parking_status=excluded.parking_status,message=excluded.message,revision=excluded.revision,
       last_request_id=excluded.last_request_id,last_write_seq=excluded.last_write_seq,updated_at=CURRENT_TIMESTAMP
-      WHERE rsvp_responses.edit_token_hash=? AND rsvp_responses.revision=? AND ?>0`,
+      WHERE rsvp_responses.edit_token_hash=? AND rsvp_responses.revision=? AND rsvp_responses.archived_at IS NULL AND ?>0`,
       ).bind(
         id,
         answer.name,
@@ -412,7 +423,7 @@ async function publicApi(request, env, url, ctx) {
       ),
       env.DB.prepare(
         `INSERT INTO rsvp_requests(request_id,response_id,payload_hash,result_json,created_at)
-      SELECT ?,id,?,?,? FROM rsvp_responses WHERE id=? AND last_request_id=? AND edit_token_hash=? ON CONFLICT(request_id) DO NOTHING`,
+      SELECT ?,id,?,?,? FROM rsvp_responses WHERE id=? AND last_request_id=? AND edit_token_hash=? AND archived_at IS NULL ON CONFLICT(request_id) DO NOTHING`,
       ).bind(
         requestId,
         payloadHash,
@@ -435,7 +446,7 @@ async function publicApi(request, env, url, ctx) {
       statements.push(
         env.DB.prepare(
           `INSERT INTO rsvp_outbox(id,response_id,payload_json,created_at)
-      SELECT ?,id,?,? FROM rsvp_responses WHERE id=? AND last_request_id=? AND edit_token_hash=? ON CONFLICT(id) DO NOTHING`,
+      SELECT ?,id,?,? FROM rsvp_responses WHERE id=? AND last_request_id=? AND edit_token_hash=? AND archived_at IS NULL ON CONFLICT(id) DO NOTHING`,
         ).bind(
           `${requestId}:${admin}`,
           JSON.stringify({
@@ -453,12 +464,13 @@ async function publicApi(request, env, url, ctx) {
       );
     await env.DB.batch(statements);
     const owner = await env.DB.prepare(
-      "SELECT edit_token_hash FROM rsvp_responses WHERE id=?",
+      "SELECT edit_token_hash,archived_at FROM rsvp_responses WHERE id=?",
     )
       .bind(id)
       .first();
     if (owner && !(await verifyEditKey(id, key, owner.edit_token_hash)))
       throw new HttpError(403, "EDIT_KEY_INVALID");
+    if (owner?.archived_at) throw new HttpError(409, "RESPONSE_ARCHIVED");
     const committed = await env.DB.prepare(
       "SELECT * FROM rsvp_requests WHERE request_id=?",
     )
@@ -466,7 +478,7 @@ async function publicApi(request, env, url, ctx) {
       .first();
     if (!committed) {
       const current = await env.DB.prepare(
-        "SELECT edit_token_hash FROM rsvp_responses WHERE id=?",
+        "SELECT edit_token_hash,archived_at FROM rsvp_responses WHERE id=?",
       )
         .bind(id)
         .first();
@@ -496,7 +508,7 @@ async function publicApi(request, env, url, ctx) {
 }
 async function readAll(env) {
   const { results } = await env.DB.prepare(
-    `SELECT ${PUBLIC_COLUMNS} FROM rsvp_responses ORDER BY created_at,id`,
+    `SELECT ${PUBLIC_COLUMNS} FROM rsvp_responses WHERE archived_at IS NULL ORDER BY created_at,id`,
   ).all();
   return results || [];
 }
@@ -575,7 +587,7 @@ async function parkingAction(env, callback, chatId) {
       ),
       env.DB.prepare(
         `UPDATE rsvp_responses SET parking_status=?,revision=revision+1,last_write_seq=(SELECT write_seq FROM rsvp_control WHERE singleton=1),updated_at=CURRENT_TIMESTAMP
-    WHERE id=? AND revision=? AND attending=? AND parking_choice='yes' AND ${expected}`,
+    WHERE id=? AND revision=? AND attending=? AND parking_choice='yes' AND archived_at IS NULL AND ${expected}`,
       ).bind(status, id, revision, YES),
     ]);
     result = changes[1];
@@ -660,9 +672,7 @@ async function telegramWebhook(request, env) {
       [fullCommand, ...args] = input.split(/\s+/),
       command = (fullCommand || "").split("@")[0].toLowerCase();
     const argument = args.join(" ");
-    let handled = false;
-    /* TEST_ADMIN_BEGIN */
-    handled = await handleTestAdmin({
+    let handled = await handleLifecycleAdmin({
       command,
       argument,
       callback,
@@ -670,11 +680,27 @@ async function telegramWebhook(request, env) {
       adminId,
       chatId,
       send,
+      sendLines,
       telegramApi,
       unix,
       digest,
       UUID,
     });
+    /* TEST_ADMIN_BEGIN */
+    if (!handled)
+      handled = await handleTestAdmin({
+        command,
+        argument,
+        callback,
+        env,
+        adminId,
+        chatId,
+        send,
+        telegramApi,
+        unix,
+        digest,
+        UUID,
+      });
     /* TEST_ADMIN_END */
     if (!handled && callback) {
       const answer = await parkingAction(env, callback, chatId);
@@ -688,6 +714,7 @@ async function telegramWebhook(request, env) {
         env,
         chatId,
         "💌 Свадьба Сони и Леши — админка\n\n/stats — сводка\n/guests — компании и гости\n/drinks — напитки компаний\n/parking — заявки и подтверждение\n/export — CSV\n" +
+          LIFECYCLE_HELP +
           (env.ENABLE_TEST_DELETIONS === "true" ? TEST_ADMIN_HELP : "") +
           "\nСайт подключается отдельно после проверки сервера.",
       );

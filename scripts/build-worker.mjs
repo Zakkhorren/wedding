@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -15,6 +15,7 @@ if (production)
     .replaceAll("TEST_ADMIN_HELP", "''");
 const modules = [
   "rsvp-policy.mjs",
+  "lifecycle-admin.mjs",
   "turnstile-verifier.mjs",
   ...(production ? [] : ["test-admin.mjs"]),
 ];
@@ -32,5 +33,8 @@ const result =
 const output = production
   ? "wedding-rsvp-api.production.js"
   : "wedding-rsvp-api.js";
-fs.writeFileSync(path.join(root, "worker", output), result.replace(/[ \t]+$/gm, ""));
+fs.writeFileSync(
+  path.join(root, "worker", output),
+  result.replace(/[ \t]+$/gm, ""),
+);
 console.log("Built worker/" + output);

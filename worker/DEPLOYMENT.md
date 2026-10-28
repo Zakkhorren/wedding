@@ -112,7 +112,7 @@ Webhook: путь `/telegram`, secret совпадает с `WEBHOOK_SECRET`, `a
 - Анкета, квитанции и очередь удаляются каскадно. Именных tombstone-записей нет; меняется общий epoch для защиты старых браузерных ID.
 - Публичных маршрутов удаления нет. Административные удаления в реальной базе агент не выполнял.
 
-После вашего **отдельного явного разрешения** на финальную очистку: выполнить подтверждённую очистку, проверить базу, выставить флаг `false`, загрузить `worker/wedding-rsvp-api.production.js`, затем удалить ненужную переменную. Сборка этого файла: `node scripts/build-worker.mjs --without-test-deletes`. В нём физически нет обработчиков `/delete`, `/clear_test` и SQL удаления ответов; старые кнопки не смогут выполнить действие. Этот файл подготовлен, но автоматически не загружается.
+После вашего **отдельного явного разрешения** на финальную очистку: выполнить подтверждённую очистку, проверить базу, выставить флаг `false`, загрузить `worker/wedding-rsvp-api.production.js`, затем удалить ненужную переменную. Сборка этого файла: `node scripts/build-worker.mjs --without-test-deletes`. В нём физически нет обработчиков `/delete` и `/clear_test`; старые кнопки этих команд не смогут выполнить действие. Отдельное подтверждаемое удаление одной анкеты `/erase ID` сохраняется согласно новому ТЗ. Этот файл подготовлен, но автоматически не загружается.
 
 ## 8. Откат и границы проверки
 
@@ -121,3 +121,6 @@ Webhook: путь `/telegram`, secret совпадает с `WEBHOOK_SECRET`, `a
 Локальные тесты не проверяют реальные секреты, разрешения бота, delivery Telegram, webhook и виджет вашего Cloudflare. Их необходимо проверить после ручного развёртывания тестового сервера.
 
 Официальные источники: [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/), [D1 batch](https://developers.cloudflare.com/d1/worker-api/d1-database/), [Siteverify](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/), [setWebhook](https://core.telegram.org/bots/api#setwebhook), [Cron](https://developers.cloudflare.com/workers/configuration/cron-triggers/).
+
+
+Обновление архива и точечное `/erase ID`: см. [ARCHIVE-ROLLOUT.md](ARCHIVE-ROLLOUT.md). В финальной сборке массового удаления нет.
