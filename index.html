@@ -114,8 +114,9 @@
             <label class="option"><input type="radio" name="attending" value="К сожалению, нет" /><span>К сожалению, нет</span></label>
             <label class="option"><input type="radio" name="attending" value="Отвечу чуть позже" /><span>Дам ответ чуть позже</span></label>
           </fieldset>
-          <div class="conditional" id="attending-fields">
-            <label class="form-block"><span>Придёте не одни? Напишите имена гостей</span><input name="additionalGuests" type="text" placeholder="Если планируете прийти с парой или семьёй" maxlength="250" /></label>
+          <div class="conditional inactive" id="attending-fields">
+            <div class="form-block guest-count-block"><label for="guest-count">Сколько человек придет, включая вас?</label><div class="guest-counter"><button type="button" id="guest-minus" aria-label="Уменьшить количество гостей" disabled>−</button><input id="guest-count" name="guestCount" type="number" min="1" step="1" inputmode="numeric" value="1" disabled /><button type="button" id="guest-plus" aria-label="Увеличить количество гостей" disabled>+</button></div></div>
+            <label class="form-block" id="additional-guests-field" hidden><span>Придёте не одни? Напишите имена гостей</span><input name="additionalGuests" type="text" placeholder="Если планируете прийти с парой или семьёй" maxlength="250" /></label>
             <div id="parking-fields" class="conditional" hidden>
               <fieldset class="form-block"><legend>Планируете приехать на автомобиле?</legend>
                 <label class="option"><input type="radio" name="parking" value="yes" disabled /><span>Да, понадобится парковочное место</span></label>
@@ -125,7 +126,7 @@
               <label class="form-block" id="parking-count" hidden><span>Сколько машин будет от вашей компании?</span><input name="carCount" type="number" min="1" step="1" inputmode="numeric" value="1" disabled aria-describedby="parking-help" /></label>
               <p class="parking-help" id="parking-help">Это заявка на парковку, а не подтвержденная бронь. Организаторы отдельно сообщат о наличии места.</p>
             </div>
-            <fieldset class="form-block"><legend>Ваши предпочтения по напиткам <small>(Можно несколько)</small></legend>
+            <fieldset class="form-block"><legend>Какие напитки предпочитает ваша компания? <small>(Можно несколько)</small></legend>
               <label class="option"><input type="checkbox" name="drinks" value="Игристое" /><span>Игристое</span></label>
               <label class="option"><input type="checkbox" name="drinks" value="Вино белое" /><span>Вино белое</span></label>
               <label class="option"><input type="checkbox" name="drinks" value="Вино красное" /><span>Вино красное</span></label>

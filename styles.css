@@ -146,3 +146,13 @@
 
 .wishes-text .heart-icon,.wishes-text .heart-icon use{color:var(--ink)}
 .wishes-text .heart-outline use{fill:none;stroke:var(--ink)}
+
+/* One response represents one company; counter uses the existing form palette. */
+#additional-guests-field[hidden]{display:none}
+.guest-count-block>label{display:block;font:500 clamp(26px,3vw,32px)/1.15 var(--body);margin:0 0 10px}
+.guest-counter{display:flex;align-items:center;gap:16px;width:max-content;max-width:100%}
+.guest-counter button{width:42px;height:42px;border:1px solid currentColor;border-radius:50%;background:transparent;color:var(--cream);font:500 30px/1 var(--body)}
+.guest-counter button:disabled{opacity:.45;cursor:default}
+.guest-counter input{max-width:90px;text-align:center;appearance:textfield;-moz-appearance:textfield}
+.guest-counter input::-webkit-inner-spin-button,.guest-counter input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+@media(max-width:600px){.guest-count-block>label{font-size:27px;margin-bottom:8px}}

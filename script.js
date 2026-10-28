@@ -307,12 +307,29 @@
     form.elements.carCount.disabled = !needsSpace;
     if (!needsSpace) form.elements.carCount.value = '1';
   }
-  syncParking();
-  form?.addEventListener('change', () => {
-    const attending = form.querySelector('input[name="attending"]:checked')?.value || '';
-    attendingGroup.classList.toggle('inactive', attending && attending !== 'Да, конечно!');
-    attendingGroup.querySelectorAll('input, textarea').forEach(el => { el.disabled = !!attending && attending !== 'Да, конечно!'; });
+  function syncCompany() {
+    const attendingYes = form.querySelector('input[name="attending"]:checked')?.value === 'Да, конечно!';
+    const count = Number(form.elements.guestCount.value);
+    attendingGroup.classList.toggle('inactive', !attendingYes);
+    attendingGroup.querySelectorAll('input, textarea').forEach(input => { input.disabled = !attendingYes; });
+    const hasOthers = attendingYes && Number.isSafeInteger(count) && count > 1;
+    $('#additional-guests-field').hidden = !hasOthers;
+    form.elements.additionalGuests.disabled = !hasOthers;
+    $('#guest-minus').disabled = !attendingYes || !Number.isSafeInteger(count) || count <= 1;
+    $('#guest-plus').disabled = !attendingYes || !Number.isSafeInteger(count) || count < 1 || count === Number.MAX_SAFE_INTEGER;
     syncParking();
+  }
+  for (const [id, change] of [['#guest-minus', -1], ['#guest-plus', 1]]) {
+    $(id).addEventListener('click', () => {
+      const count = Number(form.elements.guestCount.value);
+      if (Number.isSafeInteger(count) && Number.isSafeInteger(count + change)) form.elements.guestCount.value = String(Math.max(1, count + change));
+      syncCompany();
+    });
+  }
+  form.elements.guestCount.addEventListener('input', syncCompany);
+  syncCompany();
+  form?.addEventListener('change', () => {
+    syncCompany();
     $('#form-error').hidden = true;
   });
   form?.addEventListener('submit', async e => {
@@ -328,6 +345,11 @@
     }
     if ((f.get('website') || '').toString().trim()) { error.textContent = 'Не удалось отправить ответ.'; error.hidden = false; return; }
     const attendingYes = attending === 'Да, конечно!';
+    const guestCount = attendingYes ? Number(f.get('guestCount')) : 0;
+    if (attendingYes && (!Number.isSafeInteger(guestCount) || guestCount < 1)) {
+      error.textContent = 'Пожалуйста, укажите количество гостей — целое число от 1.';
+      error.hidden = false; form.elements.guestCount.focus(); return;
+    }
     const parking = attendingYes ? (f.get('parking') || '').toString() : '';
     const carCount = parking === 'yes' ? Number(f.get('carCount')) : null;
     if (parking === 'yes' && (!Number.isSafeInteger(carCount) || carCount < 1)) {
@@ -335,10 +357,10 @@
       error.hidden = false; form.elements.carCount.focus(); return;
     }
     const answer = {
-      name, attending,
+      name, attending, guestCount,
       parking: parking || null,
       carCount,
-      additionalGuests: attendingYes ? (f.get('additionalGuests') || '').toString().trim() : '',
+      additionalGuests: attendingYes && guestCount > 1 ? (f.get('additionalGuests') || '').toString().trim() : '',
       drinks: attendingYes ? f.getAll('drinks').map(String) : [],
       otherDrink: attendingYes ? (f.get('otherDrink') || '').toString().trim() : '',
       message: (f.get('message') || '').toString().trim(),
@@ -356,6 +378,8 @@
     try {
       const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(answer) });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const acknowledgement = await response.json();
+      if (acknowledgement?.ok !== true) throw new Error('Save was not acknowledged');
       form.hidden = true; $('#rsvp-success').hidden = false;
       text('#success-message', 'Ваш ответ доставлен организаторам. Спасибо! ♡');
       $('#rsvp-success').scrollIntoView({ behavior: motionOK ? 'smooth' : 'auto', block: 'center' });
