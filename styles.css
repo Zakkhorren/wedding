@@ -143,3 +143,5 @@
 @media(max-width:600px){.parking-note{margin-top:48px}.photo-sparkle-small{display:none}}
 
 @media(max-width:360px){.signature{font-size:43.75px}.signature .heart-icon{width:38.5px}}
+
+.wishes-text .heart-icon{color:var(--ink)}
