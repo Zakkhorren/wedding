@@ -8,6 +8,7 @@
   "scripts": {
     "preview": "node scripts/preview-rsvp.mjs",
     "preview:smoke": "node scripts/preview-rsvp.mjs --smoke",
+    "preview:manual": "node scripts/manual-rsvp-preview.mjs",
     "setup:preview": "playwright install chromium",
     "test": "node --test --test-concurrency=1 tests/*.test.mjs",
     "test:rsvp": "node tests/rsvp-form-browser.mjs && node tests/rsvp-form-errors.mjs"
