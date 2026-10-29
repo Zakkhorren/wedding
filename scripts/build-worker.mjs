@@ -15,6 +15,7 @@ if (production)
     .replaceAll("TEST_ADMIN_HELP", "''");
 const modules = [
   "rsvp-policy.mjs",
+  "rsvp-xlsx.mjs",
   "lifecycle-admin.mjs",
   "turnstile-verifier.mjs",
   ...(production ? [] : ["test-admin.mjs"]),

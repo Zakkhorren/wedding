@@ -1,3 +1,4 @@
+import { exportXlsx, XLSX_MIME } from "./rsvp-xlsx.mjs";
 import { handleLifecycleAdmin, LIFECYCLE_HELP } from "./lifecycle-admin.mjs";
 import {
   YES,
@@ -11,7 +12,6 @@ import {
   editKeyHash,
   verifyEditKey,
   describeChanges,
-  exportCsv,
 } from "./rsvp-policy.mjs";
 import { verifyTurnstile, TurnstileError } from "./turnstile-verifier.mjs";
 import { handleTestAdmin, TEST_ADMIN_HELP } from "./test-admin.mjs";
@@ -713,7 +713,7 @@ async function telegramWebhook(request, env) {
       await send(
         env,
         chatId,
-        "💌 Свадьба Сони и Леши — админка\n\n/stats — сводка\n/guests — компании и гости\n/drinks — напитки компаний\n/parking — заявки и подтверждение\n/export — CSV\n" +
+        "💌 Свадьба Сони и Леши — админка\n\n/stats — сводка\n/guests — компании и гости\n/drinks — напитки компаний\n/parking — заявки и подтверждение\n/export — XLSX\n" +
           LIFECYCLE_HELP +
           (env.ENABLE_TEST_DELETIONS === "true" ? TEST_ADMIN_HELP : "") +
           "\nСайт подключается отдельно после проверки сервера.",
@@ -745,7 +745,7 @@ async function telegramWebhook(request, env) {
         );
       if (command === "/parking") await parkingList(env, chatId, rows);
       if (command === "/export") {
-        const data = exportCsv(
+        const data = exportXlsx(
             rows.map((row) => ({
               id: row.id,
               parkingStatus: row.parking_status,
@@ -760,8 +760,8 @@ async function telegramWebhook(request, env) {
         form.append("chat_id", String(chatId));
         form.append(
           "document",
-          new Blob([data], { type: "text/csv;charset=utf-8" }),
-          "wedding-rsvp.csv",
+          new Blob([data], { type: XLSX_MIME }),
+          "wedding-rsvp.xlsx",
         );
         form.append(
           "caption",

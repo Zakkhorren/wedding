@@ -1,6 +1,7 @@
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import fs from "node:fs";
 import assert from "node:assert/strict";
+import { readXlsxParts } from "./xlsx-reader.mjs";
 const origin = "https://zakkhorren.github.io";
 const notices = [];
 const mf = new Miniflare(
@@ -26,6 +27,16 @@ const mf = new Miniflare(
           action: "rsvp",
         });
       if (url.hostname === "api.telegram.org") {
+        if (url.pathname.endsWith("/sendDocument")) {
+          const form = await request.formData();
+          const file = form.get("document");
+          notices.push({
+            document: new Uint8Array(await file.arrayBuffer()),
+            filename: file.name,
+            mime: file.type,
+          });
+          return Response.json({ ok: true, result: { message_id: 1 } });
+        }
         notices.push(await request.json());
         return Response.json({ ok: true, result: { message_id: 1 } });
       }
@@ -93,7 +104,7 @@ try {
       requestId: crypto.randomUUID(),
       revision: 0,
       epoch: meta.epoch,
-      name: "Runtime company",
+      name: "Соня и Лёша",
       attending: "Да, конечно!",
       guestCount: 3,
       drinks: ["Виски"],
@@ -155,7 +166,7 @@ try {
     requestId: crypto.randomUUID(),
     revision: current.revision,
     guestCount: 2,
-    message: "Edited in workerd",
+    message: '=HYPERLINK("https://invalid.test","test")',
   };
   const changed = await mf.dispatchFetch("https://worker.test/rsvp", {
     method: "POST",
@@ -190,6 +201,27 @@ try {
     });
     assert.equal(response.status, 200);
   }
+  await admin({
+    update_id: 190,
+    message: {
+      text: "/export",
+      from: { id: 11111 },
+      chat: { id: 11111, type: "private" },
+    },
+  });
+  const exported = notices.findLast((n) => n.document);
+  assert.equal(exported.filename, "wedding-rsvp.xlsx");
+  assert.equal(
+    exported.mime,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  );
+  const exportedSheet = readXlsxParts(exported.document)[
+    "xl/worksheets/sheet1.xml"
+  ];
+  assert.ok(exportedSheet.includes("Компания / представитель"));
+  assert.ok(exportedSheet.includes('t="inlineStr"'));
+  fs.mkdirSync(".qa", { recursive: true });
+  fs.writeFileSync(".qa/workerd-export.xlsx", exported.document);
   let lifecycleUpdate = 300;
   for (const action of ["archive", "restore"]) {
     await admin({
