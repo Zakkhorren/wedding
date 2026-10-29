@@ -1,8 +1,8 @@
 /**
  * Меняйте тексты и фотографии здесь — верстку трогать не нужно.
  * Для окончательной версии положите собственные изображения в assets/ и укажите путь вида assets/photo.jpg.
- * Для приема ответов укажите публичный HTTPS URL вашего ЗАЩИЩЕННОГО обработчика (Cloudflare Worker, Formspree и т.п.).
- * НИКОГДА не вписывайте сюда токен Telegram-бота, пароль, API key или chat_id.
+ * Проверка настоящей формы API v2 описана в RSVP-PREVIEW.md: одного URL для включения отправки недостаточно.
+ * НИКОГДА не вписывайте сюда токен Telegram-бота, пароль, секретный API key или chat_id.
  */
 window.WEDDING_CONFIG = {
   names: { first: 'Соня', second: 'Леша' },
@@ -20,5 +20,12 @@ window.WEDDING_CONFIG = {
     ['18:00', 'банкет и танцы'],
     ['22:00', 'обнимашки на прощание']
   ],
-  rsvpEndpoint: ''
+  rsvpEndpoint: '',
+  // Stage A only: the preview launcher enables this in its isolated browser.
+  // Neither an endpoint alone nor a private edit link enables network submission.
+  rsvpPreview: {
+    enabled: false,
+    endpoint: 'https://wedding-rsvp-api-test.zakk-horren.workers.dev/rsvp',
+    turnstileSitekey: ''
+  }
 };

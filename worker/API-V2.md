@@ -68,7 +68,7 @@
 
 ## Подготовленный клиент
 
-`rsvp-session.mjs` не подключён к гостевой странице. Его использует технический стенд `tests/manual-api.html`.
+`rsvp-session.mjs` используется техническим стендом `tests/manual-api.html` и настоящей формой только в явно включённом preview-режиме: см. [RSVP-PREVIEW.md](../RSVP-PREVIEW.md). Публичный main остаётся в демо-режиме.
 
 ```js
 const session = await openRsvpSession({ endpoint: 'https://TEST-WORKER.workers.dev/rsvp' });
@@ -81,7 +81,7 @@ const confidentialLink = session.editLink();
 - Ссылка: фрагмент `#rsvp_id=...&edit_key=...`. Он удаляется из адресной строки до запросов адаптера. В запросах ключ только в Authorization, перенаправления запрещены, referrer отключён.
 - `restore({discardPending:true})` явно принимает серверную версию. Отправка другого payload до разрешения запроса с неизвестным исходом блокируется.
 - После удаления: `startNewAfterDeletion(true)` — явное создание новой анкеты. Для удалённой импортированной ссылки можно заново открыть адаптер с исходным `pageUrl` и `confirmNewAfterDeletedLink:true`, только после подтверждения пользователя.
-- В будущем UI нельзя выводить ссылку в analytics/console/Telegram. Не журналировать Authorization и тела запросов Cloudflare.
+- UI не должен выводить ссылку в analytics/console/Telegram. Не журналировать Authorization и тела запросов Cloudflare.
 
 ## Архив (миграция 0002)
 
