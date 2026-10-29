@@ -39,6 +39,8 @@ async function fill(page) {
 }
 async function retryVisible(page) {
   await page.locator("#rsvp-retry").waitFor({ state: "visible" });
+  assert.equal(await page.locator("#rsvp-feedback").isVisible(), true);
+  assert.equal(await page.locator("#rsvp-save-announcement").textContent(), "");
 }
 async function state(page) {
   return page.evaluate((k) => JSON.parse(localStorage.getItem(k)), key);

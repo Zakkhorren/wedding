@@ -170,7 +170,8 @@
 .rsvp-edit-link p{font:400 19px/1.3 var(--body);overflow-wrap:anywhere}
 .rsvp-edit-link #rsvp-copy-status:empty{display:none}
 .rsvp-feedback button:disabled{opacity:.6;cursor:wait}
-#rsvp-status.rsvp-status-saved{text-align:center}
+.rsvp-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0}
+.rsvp-warning-icon{display:inline-block;width:.5em;height:1.1em;margin-right:.25em;vertical-align:-.12em;color:inherit}
 .rsvp-link-warning{margin:30px 0 28px}
 .rsvp-edit-link .rsvp-link-warning-title{font-size:clamp(24px,4vw,28px);font-weight:600;line-height:1.2;margin:0 0 14px}
 .rsvp-edit-link .rsvp-link-warning-detail{font-size:20px;line-height:1.3;margin:0}

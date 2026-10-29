@@ -85,6 +85,10 @@ export async function mountRsvp({
   let entry = entryUrl,
     restoreConfirmed = false;
   feedback.hidden = false;
+  // The separate live region announces confirmed saves; the interactive card
+  // stays a labelled region instead of announcing its private-link controls.
+  success.setAttribute("role", "region");
+  success.setAttribute("aria-labelledby", "rsvp-success-title");
   $("#mode-note").textContent = config?.local
     ? "Локальная проверка: ответы сохраняются только во временной базе этого окна. Организаторам ничего не отправляется."
     : "Предварительная версия: ответы отправляются только в тестовую базу.";
@@ -101,8 +105,9 @@ export async function mountRsvp({
       busy && lastAction === "save" ? "Сохраняем…" : "Отправить ответ";
   }
   function notify(message, options = {}) {
+    feedback.hidden = false;
+    $("#rsvp-save-announcement").textContent = "";
     status.textContent = message;
-    status.classList.toggle("rsvp-status-saved", options.saved === true);
     status.setAttribute("role", options.error ? "alert" : "status");
     retry.hidden = !options.retry;
     reload.hidden = !options.reload;
@@ -187,7 +192,11 @@ export async function mountRsvp({
     $("#rsvp-link").value = link.href;
     $("#rsvp-edit-link").hidden = false;
     $("#rsvp-copy-status").textContent = "";
-    notify("Ответ восстановлен и доступен для редактирования в этом браузере.");
+    // The card is the only visible success confirmation. Keep an always-mounted
+    // live region so screen readers announce saves without a visible duplicate.
+    feedback.hidden = true;
+    status.textContent = "";
+    $("#rsvp-save-announcement").textContent = "Ваш ответ сохранён.";
   }
   async function connect() {
     if (busy) return;
@@ -263,7 +272,6 @@ export async function mountRsvp({
       pending = null;
       blocked = false;
       showSuccess(result);
-      notify("Ваш ответ сохранён!", { saved: true });
       success.scrollIntoView({
         behavior: motionOK ? "smooth" : "auto",
         block: "center",

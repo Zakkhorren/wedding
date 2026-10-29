@@ -58,6 +58,32 @@ async function fill(page) {
 }
 async function saved(page) {
   await page.locator("#rsvp-success").waitFor({ state: "visible" });
+  assert.equal(
+    await page.locator("#rsvp-success").getAttribute("role"),
+    "region",
+  );
+  assert.equal(
+    await page.locator("#rsvp-success").getAttribute("aria-labelledby"),
+    "rsvp-success-title",
+  );
+  assert.equal(await page.locator("#rsvp-feedback").isHidden(), true);
+  assert.equal(await page.locator("#rsvp-feedback").boundingBox(), null);
+  assert.equal(await page.locator("#rsvp-status").textContent(), "");
+  const announcement = page.locator("#rsvp-save-announcement");
+  assert.equal(await announcement.getAttribute("aria-live"), "polite");
+  assert.equal(await announcement.getAttribute("aria-atomic"), "true");
+  assert.match(await announcement.ariaSnapshot(), /сохранён/);
+  assert.equal(
+    await announcement.evaluate((el) => getComputedStyle(el).position),
+    "absolute",
+  );
+  assert.equal(
+    (await page.locator("#rsvp-success-title").textContent()).replaceAll(
+      "\u00a0",
+      " ",
+    ),
+    "Спасибо за ответ!",
+  );
   assert.match(
     (await page.locator("#success-message").textContent()).replaceAll(
       "\u00a0",
@@ -139,17 +165,24 @@ try {
   await page.locator("#rsvp-submit").click();
   await saved(page);
   assert.equal(
-    (await page.locator("#rsvp-status").textContent()).replaceAll(
-      "\u00a0",
-      " ",
-    ),
-    "Ваш ответ сохранён!",
+    await page.locator(".rsvp-warning-icon").getAttribute("aria-hidden"),
+    "true",
   );
   assert.equal(
-    await page
-      .locator("#rsvp-status")
-      .evaluate((el) => getComputedStyle(el).textAlign),
-    "center",
+    await page.locator(".rsvp-warning-icon").evaluate((el) => {
+      const color = getComputedStyle(document.querySelector("#rsvp")).color;
+      return (
+        getComputedStyle(el).color === color &&
+        getComputedStyle(el.querySelector("path")).stroke === color &&
+        getComputedStyle(el.querySelector("circle")).fill === color
+      );
+    }),
+    true,
+  );
+  assert.ok(
+    !(await page.locator(".rsvp-link-warning-title").textContent()).includes(
+      "❗",
+    ),
   );
   assert.match(
     (await page.locator("#success-message").textContent()).replaceAll(
@@ -243,12 +276,8 @@ try {
   });
   await page.locator("#rsvp-submit").click();
   await page.locator("#rsvp-reload").waitFor({ state: "visible" });
-  assert.equal(
-    await page
-      .locator("#rsvp-status")
-      .evaluate((el) => el.classList.contains("rsvp-status-saved")),
-    false,
-  );
+  assert.equal(await page.locator("#rsvp-feedback").isVisible(), true);
+  assert.equal(await page.locator("#rsvp-save-announcement").textContent(), "");
   assert.equal(
     await page
       .locator("#rsvp-status")
