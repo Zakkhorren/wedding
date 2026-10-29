@@ -102,6 +102,7 @@ export async function mountRsvp({
   }
   function notify(message, options = {}) {
     status.textContent = message;
+    status.classList.toggle("rsvp-status-saved", options.saved === true);
     status.setAttribute("role", options.error ? "alert" : "status");
     retry.hidden = !options.retry;
     reload.hidden = !options.reload;
@@ -168,8 +169,12 @@ export async function mountRsvp({
     fill(result.answer);
     form.hidden = true;
     success.hidden = false;
-    const parkingText =
-      result.parkingStatus === "pending"
+    const requestedParking =
+      result.answer.attending === "Да, конечно!" &&
+      result.answer.parking === "yes";
+    const parkingText = !requestedParking
+      ? ""
+      : result.parkingStatus === "pending"
         ? " Заявка на парковку отправлена и ждёт отдельного подтверждения организаторов."
         : result.parkingStatus === "approved"
           ? " Организаторы подтвердили парковку для вашей компании."
@@ -258,7 +263,7 @@ export async function mountRsvp({
       pending = null;
       blocked = false;
       showSuccess(result);
-      notify("База подтвердила сохранение. Спасибо за ответ!");
+      notify("Ваш ответ сохранён!", { saved: true });
       success.scrollIntoView({
         behavior: motionOK ? "smooth" : "auto",
         block: "center",

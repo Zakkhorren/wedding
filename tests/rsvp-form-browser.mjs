@@ -138,6 +138,36 @@ try {
   await fill(page);
   await page.locator("#rsvp-submit").click();
   await saved(page);
+  assert.equal(
+    (await page.locator("#rsvp-status").textContent()).replaceAll(
+      "\u00a0",
+      " ",
+    ),
+    "Ваш ответ сохранён!",
+  );
+  assert.equal(
+    await page
+      .locator("#rsvp-status")
+      .evaluate((el) => getComputedStyle(el).textAlign),
+    "center",
+  );
+  assert.match(
+    (await page.locator("#success-message").textContent()).replaceAll(
+      "\u00a0",
+      " ",
+    ),
+    /ждёт отдельного подтверждения/,
+  );
+  assert.equal(
+    await page.locator(".rsvp-link-warning-title").evaluate((el) => {
+      const title = getComputedStyle(el),
+        detail = getComputedStyle(
+          document.querySelector(".rsvp-link-warning-detail"),
+        );
+      return parseFloat(title.fontSize) > parseFloat(detail.fontSize);
+    }),
+    true,
+  );
   assert.equal(await count(), 1);
   const identity = await state(page),
     id = identity.id;
@@ -151,11 +181,13 @@ try {
     3,
   );
   const link = await page.locator("#rsvp-link").inputValue();
-  for (const width of [320, 390, 1440]) {
+  for (const width of [320, 375, 390, 430, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    await page
-      .locator("#rsvp-success")
-      .screenshot({ path: ".qa/rsvp-success-" + width + ".png" });
+    await page.locator(".rsvp-wrap").screenshot({
+      path: ".qa/rsvp-success-" + width + ".png",
+      mask: [page.locator("#rsvp-link")],
+      maskColor: "#92A8B3",
+    });
     assert.ok(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -166,7 +198,10 @@ try {
   assert.equal(new URL(link).search, "?rsvp_preview=1");
   assert.ok(new URL(link).hash.includes("edit_key="));
   await page.locator("#rsvp-copy").click();
-  assert.equal(await page.evaluate(() => navigator.clipboard.readText()), link);
+  assert.ok(
+    (await page.evaluate(() => navigator.clipboard.readText())) === link,
+    "Clipboard link mismatch",
+  );
   await page.evaluate(() =>
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -208,6 +243,18 @@ try {
   });
   await page.locator("#rsvp-submit").click();
   await page.locator("#rsvp-reload").waitFor({ state: "visible" });
+  assert.equal(
+    await page
+      .locator("#rsvp-status")
+      .evaluate((el) => el.classList.contains("rsvp-status-saved")),
+    false,
+  );
+  assert.equal(
+    await page
+      .locator("#rsvp-status")
+      .evaluate((el) => getComputedStyle(el).textAlign),
+    "start",
+  );
   assert.equal(await page.locator("#rsvp-success").isHidden(), true);
   assert.equal(
     await page.locator("[name=message]").inputValue(),
@@ -231,6 +278,13 @@ try {
   await page.locator("[name=guestCount]").fill("2");
   await page.locator("#rsvp-submit").click();
   await saved(page);
+  assert.match(
+    (await page.locator("#success-message").textContent()).replaceAll(
+      "\u00a0",
+      " ",
+    ),
+    /подтвердили парковку/,
+  );
   assert.equal(await count(), 1);
   checks++;
   await page.reload({ waitUntil: "domcontentloaded" });
@@ -244,7 +298,10 @@ try {
     other = await second.newPage();
   await ready(other, link);
   await saved(other);
-  assert.equal(new URL(other.url()).hash, "");
+  assert.ok(
+    new URL(other.url()).hash === "",
+    "Private fragment was not cleared",
+  );
   await other.locator("#edit-answer").click();
   assert.equal(await other.locator("[name=otherDrink]").inputValue(), "Сидр");
   assert.equal(await other.locator("[name=guestCount]").inputValue(), "2");
@@ -288,6 +345,23 @@ try {
   assert.equal((await state(other)).pending, null);
   checks++;
 
+  // Server-side rejection is distinct from a pending request.
+  await db
+    .prepare(
+      "UPDATE rsvp_responses SET parking_status='rejected',revision=revision+1 WHERE id=?",
+    )
+    .bind(id)
+    .run();
+  await other.reload({ waitUntil: "domcontentloaded" });
+  await saved(other);
+  assert.match(
+    (await other.locator("#success-message").textContent()).replaceAll(
+      "\u00a0",
+      " ",
+    ),
+    /парковку отклонена/,
+  );
+
   // Both negative attendance branches clear/disable all irrelevant data.
   for (const attendance of ["К сожалению, нет", "Отвечу чуть позже"]) {
     await other.locator("#edit-answer").click();
@@ -304,6 +378,26 @@ try {
     assert.equal(row.drinks_json, "[]");
     assert.equal(row.cars_requested, 0);
     assert.equal(row.parking_status, "not_requested");
+    assert.ok(
+      !(await other.locator("#success-message").textContent())
+        .toLowerCase()
+        .includes("парков"),
+    );
+  }
+  checks++;
+
+  // Positive attendance without a parking request still has no parking message.
+  for (const choice of ["no", "unknown"]) {
+    await other.locator("#edit-answer").click();
+    await other.locator('[name=attending][value="Да, конечно!"]').check();
+    await other.locator('[name=parking][value="' + choice + '"]').check();
+    await other.locator("#rsvp-submit").click();
+    await saved(other);
+    assert.ok(
+      !(await other.locator("#success-message").textContent())
+        .toLowerCase()
+        .includes("парков"),
+    );
   }
   checks++;
 

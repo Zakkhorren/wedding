@@ -1,4 +1,4 @@
-import { Miniflare, convertV4MiniflareOptions } from "miniflare";
+import { createLocalRuntime } from "../scripts/local-runtime.mjs";
 import { chromium } from "playwright";
 import fs from "node:fs";
 import path from "node:path";
@@ -26,30 +26,27 @@ const server = http.createServer((req, res) => {
 });
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
-const mf = new Miniflare(
-  convertV4MiniflareOptions({
-    modules: true,
-    scriptPath: "worker/wedding-rsvp-api.js",
-    compatibilityDate: "2026-10-28",
-    d1Databases: ["DB"],
-    bindings: {
-      ALLOWED_ORIGIN: origin,
-      ADMIN_IDS: "11111",
-      BOT_TOKEN: "TEST_ONLY",
-      WEBHOOK_SECRET: "TEST_ONLY_WEBHOOK",
-      TURNSTILE_SECRET: "TEST_ONLY",
-    },
-    outboundService: async (request) => {
-      if (new URL(request.url).hostname === "challenges.cloudflare.com")
-        return Response.json({
-          success: true,
-          hostname: "127.0.0.1",
-          action: "rsvp",
-        });
-      return Response.json({ ok: true, result: { message_id: 1 } });
-    },
-  }),
-);
+const mf = createLocalRuntime({
+  modules: true,
+  scriptPath: "worker/wedding-rsvp-api.js",
+  d1Databases: ["DB"],
+  bindings: {
+    ALLOWED_ORIGIN: origin,
+    ADMIN_IDS: "11111",
+    BOT_TOKEN: "TEST_ONLY",
+    WEBHOOK_SECRET: "TEST_ONLY_WEBHOOK",
+    TURNSTILE_SECRET: "TEST_ONLY",
+  },
+  outboundService: async (request) => {
+    if (new URL(request.url).hostname === "challenges.cloudflare.com")
+      return Response.json({
+        success: true,
+        hostname: "127.0.0.1",
+        action: "rsvp",
+      });
+    return Response.json({ ok: true, result: { message_id: 1 } });
+  },
+});
 function statements(file) {
   let buffer = "",
     trigger = false,

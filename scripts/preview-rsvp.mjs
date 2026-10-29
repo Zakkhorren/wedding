@@ -18,27 +18,28 @@ if (
   (!args.includes("--sitekey") || !sitekey || sitekey.startsWith("--"))
 )
   throw Error("Use --test-api --sitekey PUBLIC_SITEKEY (never a secret key)");
-let local;
-const context = await chromium.launchPersistentContext(
-  path.join(
-    root,
-    ".qa",
-    remote && !args.includes("--fresh-browser")
-      ? "rsvp-test-api-browser"
-      : "rsvp-isolated-browser-" + Date.now(),
-  ),
-  {
-    headless: smoke,
-    viewport: args.includes("--mobile") ? { width: 390, height: 844 } : null,
-  },
-);
+let local, context;
 try {
+  // Initialise workerd before opening a browser; failed startup leaves no empty window.
+  if (!remote) local = await localPreviewWorker();
+  context = await chromium.launchPersistentContext(
+    path.join(
+      root,
+      ".qa",
+      remote && !args.includes("--fresh-browser")
+        ? "rsvp-test-api-browser"
+        : "rsvp-isolated-browser-" + Date.now(),
+    ),
+    {
+      headless: smoke && !args.includes("--headed"),
+      viewport: args.includes("--mobile") ? { width: 390, height: 844 } : null,
+    },
+  );
   await routePreview(context, {
     sitekey: remote ? sitekey : "LOCAL_PREVIEW",
     local: !remote,
   });
   if (!remote) {
-    local = await localPreviewWorker();
     await routeLocalWorker(context, local.mf);
   }
   const page = context.pages()[0] || (await context.newPage());
@@ -59,6 +60,6 @@ try {
     console.log("PASS: isolated local preview launcher");
   } else await new Promise((resolve) => context.once("close", resolve));
 } finally {
-  await context.close().catch(() => {});
+  await context?.close().catch(() => {});
   await local?.mf.dispose();
 }

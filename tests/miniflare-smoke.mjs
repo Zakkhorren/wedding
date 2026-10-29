@@ -1,49 +1,46 @@
-import { Miniflare, convertV4MiniflareOptions } from "miniflare";
+import { createLocalRuntime } from "../scripts/local-runtime.mjs";
 import fs from "node:fs";
 import assert from "node:assert/strict";
 import { readXlsxParts } from "./xlsx-reader.mjs";
 const origin = "https://zakkhorren.github.io";
 const notices = [];
-const mf = new Miniflare(
-  convertV4MiniflareOptions({
-    modules: true,
-    scriptPath: "worker/wedding-rsvp-api.js",
-    compatibilityDate: "2026-10-28",
-    d1Databases: ["DB"],
-    bindings: {
-      ALLOWED_ORIGIN: origin,
-      ADMIN_IDS: "11111,22222",
-      BOT_TOKEN: "TEST_ONLY",
-      WEBHOOK_SECRET: "TEST_ONLY_WEBHOOK",
-      TURNSTILE_SECRET: "TEST_ONLY_TURNSTILE",
-      ENABLE_TEST_DELETIONS: "true",
-    },
-    outboundService: async (request) => {
-      const url = new URL(request.url);
-      if (url.hostname === "challenges.cloudflare.com")
-        return Response.json({
-          success: true,
-          hostname: new URL(origin).hostname,
-          action: "rsvp",
+const mf = createLocalRuntime({
+  modules: true,
+  scriptPath: "worker/wedding-rsvp-api.js",
+  d1Databases: ["DB"],
+  bindings: {
+    ALLOWED_ORIGIN: origin,
+    ADMIN_IDS: "11111,22222",
+    BOT_TOKEN: "TEST_ONLY",
+    WEBHOOK_SECRET: "TEST_ONLY_WEBHOOK",
+    TURNSTILE_SECRET: "TEST_ONLY_TURNSTILE",
+    ENABLE_TEST_DELETIONS: "true",
+  },
+  outboundService: async (request) => {
+    const url = new URL(request.url);
+    if (url.hostname === "challenges.cloudflare.com")
+      return Response.json({
+        success: true,
+        hostname: new URL(origin).hostname,
+        action: "rsvp",
+      });
+    if (url.hostname === "api.telegram.org") {
+      if (url.pathname.endsWith("/sendDocument")) {
+        const form = await request.formData();
+        const file = form.get("document");
+        notices.push({
+          document: new Uint8Array(await file.arrayBuffer()),
+          filename: file.name,
+          mime: file.type,
         });
-      if (url.hostname === "api.telegram.org") {
-        if (url.pathname.endsWith("/sendDocument")) {
-          const form = await request.formData();
-          const file = form.get("document");
-          notices.push({
-            document: new Uint8Array(await file.arrayBuffer()),
-            filename: file.name,
-            mime: file.type,
-          });
-          return Response.json({ ok: true, result: { message_id: 1 } });
-        }
-        notices.push(await request.json());
         return Response.json({ ok: true, result: { message_id: 1 } });
       }
-      throw Error("Unexpected network request");
-    },
-  }),
-);
+      notices.push(await request.json());
+      return Response.json({ ok: true, result: { message_id: 1 } });
+    }
+    throw Error("Unexpected network request");
+  },
+});
 function statements(file) {
   const source = fs.readFileSync(file, "utf8").replace(/^\uFEFF/, "");
   let buffer = "",

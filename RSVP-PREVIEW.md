@@ -16,7 +16,9 @@ Chromium из Playwright для интерактивного просмотра.
 
 ```powershell
 cd .worktrees/rsvp-preview
-node scripts/preview-rsvp.mjs
+npm ci --ignore-scripts=false
+npm run setup:preview
+npm run preview
 ```
 
 Если проверка выполняется в другой копии репозитория, не переключайте грязную
@@ -24,12 +26,36 @@ node scripts/preview-rsvp.mjs
 
 ```powershell
 git fetch origin
-git worktree add --detach ../wedding-rsvp-preview origin/feat/rsvp-preview
-cd ../wedding-rsvp-preview
-npm install --no-save --package-lock=false playwright miniflare
-npx playwright install chromium
-node scripts/preview-rsvp.mjs
+git worktree add --detach ../wedding-rsvp-preview-fixed origin/feat/rsvp-preview
+cd ../wedding-rsvp-preview-fixed
+npm ci --ignore-scripts=false
+npm run setup:preview
+npm run preview
 ```
+
+Если в прежней копии остались ручные диагностические исправления, оставьте их
+там и используйте новый worktree: переносить их в обновлённую версию не нужно.
+
+Зависимости закреплены в `package.json` и `package-lock.json`:
+Miniflare `4.20260730.0`, workerd `1.20260730.1`, Playwright `1.64.1`.
+Используется прямой стабильный API Miniflare 4, без `convertV4MiniflareOptions`.
+Локальная compatibility date `2026-07-30` задана в
+`scripts/local-runtime.mjs` и согласована с этим workerd. Дата и конфигурация
+действующего Cloudflare Worker не меняются.
+
+В `allowScripts` разрешён postinstall только закреплённой версии
+`workerd@1.20260730.1`. Поэтому npm не требует ручного одобрения или правки
+исходников. `--ignore-scripts=false` позволяет выполнить этот разрешённый
+postinstall, даже если в личной конфигурации npm было включено ignore-scripts.
+Общее разрешение скриптов всех зависимостей не используется. Патч-версии
+sharp/undici также закреплены через overrides. Проверка: `npm audit` — 0 уязвимостей.
+
+Команда `npm run setup:preview` устанавливает Chromium нужной версии.
+`npm run preview:smoke` проверяет полный запуск без открытия видимого окна.
+Оконный запуск на Windows проверяется командой
+`npm run preview:smoke -- --headed`.
+При ошибке локальный runtime освобождает ресурсы; браузер запускается только
+после успешной подготовки Miniflare/D1.
 
 По умолчанию открывается **полностью локальная** проверка. Настоящий код Worker
 работает в Miniflare/D1 на компьютере; Turnstile и Telegram заменены локальными
@@ -130,7 +156,7 @@ node scripts/preview-rsvp.mjs --smoke
 ```
 
 - 53 unit/integration-теста: прежние backend/XLSX/архив/парковка и адаптер.
-- 12 сценариев реальной формы в Chromium с настоящим локальным workerd/D1:
+- 13 сценариев реальной формы в Chromium с настоящим локальным workerd/D1:
   demo gate, отключённый preview, отсутствие sitekey, создание, копирование,
   редактирование, конфликт после административного подтверждения парковки,
   отмена/подтверждение загрузки, перезагрузка, другая браузерная identity,
@@ -142,9 +168,23 @@ node scripts/preview-rsvp.mjs --smoke
   повреждённая/неверная персональная ссылка и устаревший ID после смены epoch.
 - Ширины 320, 375, 390, 430, 768, 1024, 1440 px; переполнение, условия,
   растущая textarea. Скриншоты в `.qa/rsvp-preview-*.png` и
-  `.qa/rsvp-success-*.png` не входят в Git.
+  `.qa/rsvp-success-*.png` маскируют поле персональной ссылки. Отобранные
+  замаскированные изображения для ревью находятся в `docs/rsvp-preview/`.
 - Прежняя демо-форма, технический адаптер, серверные тесты и preview launcher
   проверяются отдельно. Реальные удалённые данные в этих тестах не используются.
+
+## Косметические правки по комментариям PR #8
+
+После подтверждённой отправки отдельное сообщение «Ваш ответ сохранён!»
+центрируется модификатором только этого статуса. Любое следующее сообщение,
+включая ошибку, сбрасывает модификатор; стили ошибок не меняются.
+
+Под кнопкой копирования выделены заголовок «❗ Внимание! Сохраните эту ссылку»
+и более мелкое пояснение. Сохранены палитра, рукописный шрифт и интерфейс
+редактирования. Текст о парковке показывается только при положительном
+ответе и запросе парковки, со статусом из API.
+
+[Замаскированные скриншоты мобильной и десктопной версии](docs/rsvp-preview/README.md).
 
 Это подготовка этапа A. Реальный тест с публичным sitekey выполняет владелец
 после проверки PR. Production-cutover, резервная копия D1, обновление основного

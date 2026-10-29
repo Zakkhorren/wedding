@@ -1,3 +1,4 @@
+import { createLocalRuntime } from "./local-runtime.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -111,42 +112,43 @@ function sqlStatements(file) {
   return statements;
 }
 export async function localPreviewWorker() {
-  const { Miniflare, convertV4MiniflareOptions } = await import("miniflare");
-  const mf = new Miniflare(
-    convertV4MiniflareOptions({
-      modules: true,
-      scriptPath: path.join(root, "worker/wedding-rsvp-api.js"),
-      compatibilityDate: "2026-10-28",
-      d1Databases: ["DB"],
-      bindings: {
-        ALLOWED_ORIGIN: previewOrigin,
-        ADMIN_IDS: "11111",
-        BOT_TOKEN: "LOCAL_ONLY",
-        WEBHOOK_SECRET: "LOCAL_ONLY",
-        TURNSTILE_SECRET: "LOCAL_ONLY",
-      },
-      outboundService: async (request) => {
-        const hostname = new URL(request.url).hostname;
-        if (hostname === "challenges.cloudflare.com")
-          return Response.json({
-            success: true,
-            hostname: "zakkhorren.github.io",
-            action: "rsvp",
-          });
-        if (hostname === "api.telegram.org")
-          return Response.json({ ok: true, result: { message_id: 1 } });
-        throw Error("Unexpected local preview outbound request");
-      },
-    }),
-  );
-  const db = await mf.getD1Database("DB");
-  for (const file of [
-    "tests/fixtures/legacy-schema.sql",
-    "worker/migrations/0001_rsvp_v2.sql",
-    "worker/migrations/0002_archive_lifecycle.sql",
-  ])
-    await db.batch(sqlStatements(file).map((sql) => db.prepare(sql)));
-  return { mf, db };
+  const mf = createLocalRuntime({
+    modules: true,
+    scriptPath: path.join(root, "worker/wedding-rsvp-api.js"),
+    d1Databases: ["DB"],
+    bindings: {
+      ALLOWED_ORIGIN: previewOrigin,
+      ADMIN_IDS: "11111",
+      BOT_TOKEN: "LOCAL_ONLY",
+      WEBHOOK_SECRET: "LOCAL_ONLY",
+      TURNSTILE_SECRET: "LOCAL_ONLY",
+    },
+    outboundService: async (request) => {
+      const hostname = new URL(request.url).hostname;
+      if (hostname === "challenges.cloudflare.com")
+        return Response.json({
+          success: true,
+          hostname: "zakkhorren.github.io",
+          action: "rsvp",
+        });
+      if (hostname === "api.telegram.org")
+        return Response.json({ ok: true, result: { message_id: 1 } });
+      throw Error("Unexpected local preview outbound request");
+    },
+  });
+  try {
+    const db = await mf.getD1Database("DB");
+    for (const file of [
+      "tests/fixtures/legacy-schema.sql",
+      "worker/migrations/0001_rsvp_v2.sql",
+      "worker/migrations/0002_archive_lifecycle.sql",
+    ])
+      await db.batch(sqlStatements(file).map((sql) => db.prepare(sql)));
+    return { mf, db };
+  } catch (error) {
+    await mf.dispose();
+    throw error;
+  }
 }
 export async function routeLocalWorker(context, mf) {
   await context.route(previewEndpoint + "**", async (route) => {
