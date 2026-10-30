@@ -78,6 +78,7 @@ try {
   for (const file of [
     "tests/fixtures/legacy-schema.sql",
     "worker/migrations/0001_rsvp_v2.sql",
+    "worker/migrations/0002_archive_lifecycle.sql",
   ])
     await db.batch(statements(file).map((sql) => db.prepare(sql)));
   async function context() {

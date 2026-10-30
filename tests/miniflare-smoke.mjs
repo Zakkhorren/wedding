@@ -66,9 +66,10 @@ try {
     .bind(crypto.randomUUID(), "Legacy", "Да, конечно!")
     .run();
   await db.batch(
-    statements("worker/migrations/0001_rsvp_v2.sql").map((sql) =>
-      db.prepare(sql),
-    ),
+    [
+      ...statements("worker/migrations/0001_rsvp_v2.sql"),
+      ...statements("worker/migrations/0002_archive_lifecycle.sql"),
+    ].map((sql) => db.prepare(sql)),
   );
   assert.equal(
     (await db.prepare("SELECT COUNT(*) n FROM rsvp_responses").first()).n,
@@ -129,7 +130,10 @@ try {
             id: "callback-" + i,
             data: `p:a:${id}:1`,
             from: { id: i ? 22222 : 11111 },
-            message: { message_id: 1, chat: { id: i ? 22222 : 11111, type: "private" } },
+            message: {
+              message_id: 1,
+              chat: { id: i ? 22222 : 11111, type: "private" },
+            },
           },
         }),
       }),
@@ -185,6 +189,43 @@ try {
       body: JSON.stringify(update),
     });
     assert.equal(response.status, 200);
+  }
+  let lifecycleUpdate = 300;
+  for (const action of ["archive", "restore"]) {
+    await admin({
+      update_id: lifecycleUpdate++,
+      message: {
+        text: "/" + action + " " + ids[0],
+        from: { id: 11111 },
+        chat: { id: 11111, type: "private" },
+      },
+    });
+    const prompt = notices.findLast((n) =>
+      n.reply_markup?.inline_keyboard?.[0]?.[0]?.callback_data?.startsWith(
+        "l:",
+      ),
+    );
+    assert.ok(prompt);
+    await admin({
+      update_id: lifecycleUpdate++,
+      callback_query: {
+        id: "lifecycle" + lifecycleUpdate,
+        data: prompt.reply_markup.inline_keyboard[0][0].callback_data,
+        from: { id: 11111 },
+        message: { chat: { id: 11111, type: "private" }, message_id: 1 },
+      },
+    });
+    const row = await db
+      .prepare(
+        "SELECT archived_at,parking_status FROM rsvp_responses WHERE id=?",
+      )
+      .bind(ids[0])
+      .first();
+    if (action === "archive") assert.ok(row.archived_at);
+    else {
+      assert.equal(row.archived_at, null);
+      assert.equal(row.parking_status, "pending");
+    }
   }
   await admin({
     update_id: 200,

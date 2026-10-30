@@ -193,6 +193,13 @@
         }
         function showError(error) {
           const code = error?.code || "REQUEST_FAILED";
+          if (code === "RESPONSE_ARCHIVED") {
+            status(
+              "Анкета находится в архиве. Свяжитесь с организаторами для восстановления. Новый ответ создавать не нужно.",
+            );
+            $("#connect").disabled = false;
+            return;
+          }
           status("Ошибка: " + code + ". Успешное сохранение не подтверждено.");
           if (["RESPONSE_DELETED", "STALE_IDENTITY"].includes(code))
             $("#new-answer").hidden = false;

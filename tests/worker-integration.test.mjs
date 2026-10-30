@@ -12,6 +12,21 @@ const YES = "Да, конечно!",
   NO = "К сожалению, нет",
   LATER = "Отвечу чуть позже";
 const origin = "https://zakkhorren.github.io";
+async function lifecycle(env, action, id, implementation = worker) {
+  await telegramUpdate(
+    env,
+    {
+      update_id: updateNumber++,
+      message: {
+        text: "/" + action + " " + id,
+        chat: { id: 11111, type: "private" },
+        from: { id: 11111 },
+      },
+    },
+    implementation,
+  );
+  return telegram.at(-1).data.reply_markup.inline_keyboard[0][0].callback_data;
+}
 const uuid = () => crypto.randomUUID();
 const key = () =>
   Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("base64url");
@@ -37,7 +52,9 @@ globalThis.fetch = async (url, options) => {
       options.body instanceof FormData
         ? {
             chat_id: options.body.get("chat_id"),
-            document: await options.body.get("document")?.text(),
+            document: Buffer.from(
+              await options.body.get("document").arrayBuffer(),
+            ).toString("utf8"),
           }
         : JSON.parse(options.body);
     telegram.push({ method: String(url).split("/").at(-1), data });
@@ -311,7 +328,9 @@ test("Parking approvals enforce 8 total, stale buttons and unauthorized admins c
   db.close();
 });
 test("Rejected parking can be reopened by admin, but stale callbacks stay invalid", async () => {
-  const db = database(), env = envFor(db), identityA = await identity(env, { carCount: 1 });
+  const db = database(),
+    env = envFor(db),
+    identityA = await identity(env, { carCount: 1 });
   await save(env, identityA);
   const id = identityA.body.submissionId;
   await callback(env, `p:r:${id}:1`);
@@ -376,7 +395,9 @@ test("Existing commands, exact guest sums, companies per drink and CSV continue 
   const csv = telegram.filter((r) => r.method === "sendDocument").at(-1)
     .data.document;
   assert.ok(csv.startsWith("\ufeffsep=;\r\n"));
-  assert.ok(csv.includes("Количество гостей") && csv.includes("Статус парковки"));
+  assert.ok(
+    csv.includes("Количество гостей") && csv.includes("Статус парковки"),
+  );
   assert.ok(!csv.includes("edit_token_hash"));
   db.close();
 });
@@ -501,13 +522,13 @@ test("Clear snapshot does not erase newly created/edited answers; explicit cance
   assert.equal(rows(db).length, 2);
   db.close();
 });
-test("Production artifact physically excludes destructive handlers; public DELETE is never available", async () => {
+test("Production excludes temporary deletion handlers; public DELETE is never available", async () => {
   const source = fs.readFileSync(
     new URL("../worker/wedding-rsvp-api.production.js", import.meta.url),
     "utf8",
   );
   assert.ok(
-    !source.includes("DELETE FROM rsvp_responses") &&
+    !source.includes("DELETE FROM rsvp_responses WHERE 1") &&
       !source.includes("handleTestAdmin") &&
       !source.includes("/clear_test"),
   );
@@ -751,8 +772,241 @@ test("Fully allocated parking still permits ordinary guest edits without false c
   db.close();
 });
 
-test('Missing bot/admin configuration cannot silently accept records without notification targets',async()=>{
- const db=database(),env=envFor(db),id=await identity(env);
- for(const broken of [{...env,BOT_TOKEN:''},{...env,ADMIN_IDS:''},{...env,TURNSTILE_SECRET:''}])assert.equal((await save(broken,id)).status,503);
- assert.equal(rows(db).length,0);db.close();
+test("Missing bot/admin configuration cannot silently accept records without notification targets", async () => {
+  const db = database(),
+    env = envFor(db),
+    id = await identity(env);
+  for (const broken of [
+    { ...env, BOT_TOKEN: "" },
+    { ...env, ADMIN_IDS: "" },
+    { ...env, TURNSTILE_SECRET: "" },
+  ])
+    assert.equal((await save(broken, id)).status, 503);
+  assert.equal(rows(db).length, 0);
+  db.close();
+});
+
+test("Archive releases capacity; restore preserves identity but requires fresh parking review", async () => {
+  const db = database(),
+    env = envFor(db),
+    a = await identity(env, { carCount: 8 }),
+    b = await identity(env, { carCount: 1 });
+  await save(env, a);
+  await save(env, b);
+  await callback(env, `p:a:${a.body.submissionId}:1`);
+  const original = rows(db).find((r) => r.id === a.body.submissionId);
+  const archive = await lifecycle(env, "archive", a.body.submissionId);
+  await callback(env, archive, 22222);
+  assert.equal(rows(db)[0].archived_at, null);
+  await callback(env, archive);
+  let row = rows(db).find((r) => r.id === a.body.submissionId);
+  assert.ok(row.archived_at);
+  assert.equal(row.edit_token_hash, original.edit_token_hash);
+  assert.equal((await save(env, a)).data.error, "RESPONSE_ARCHIVED");
+  assert.equal(
+    (
+      await (
+        await call(env, "/rsvp/" + row.id, "GET", undefined, a.secret)
+      ).json()
+    ).error,
+    "RESPONSE_ARCHIVED",
+  );
+  await callback(env, `p:a:${b.body.submissionId}:1`);
+  assert.throws(() =>
+    db.sqlite
+      .prepare("UPDATE rsvp_responses SET archived_at=NULL WHERE id=?")
+      .run(row.id),
+  );
+  await callback(env, await lifecycle(env, "restore", row.id));
+  row = rows(db).find((r) => r.id === row.id);
+  assert.equal(row.archived_at, null);
+  assert.equal(row.parking_status, "pending");
+  await callback(env, `p:a:${row.id}:2`);
+  assert.equal(rows(db).find((r) => r.id === row.id).parking_status, "pending");
+  await callback(env, `p:a:${row.id}:${row.revision}`);
+  assert.equal(rows(db).find((r) => r.id === row.id).parking_status, "pending");
+  await callback(env, archive);
+  assert.equal(rows(db).find((r) => r.id === row.id).archived_at, null);
+  db.close();
+});
+
+test("Archived records leave active reports/export/outbox; revision-bound confirmations reject edits and expiry", async () => {
+  const db = database(),
+    env = envFor(db),
+    a = await identity(env, { name: "UNIQUE_ARCHIVE_PERSON" });
+  await save(env, a);
+  const stale = await lifecycle(env, "archive", a.body.submissionId);
+  await save(env, edit(a, 1, { message: "changed" }));
+  await callback(env, stale);
+  assert.equal(rows(db)[0].archived_at, null);
+  const expired = await lifecycle(env, "archive", a.body.submissionId);
+  db.sqlite.exec("UPDATE rsvp_lifecycle_confirmations SET expires_at=0");
+  await callback(env, expired);
+  assert.equal(rows(db)[0].archived_at, null);
+  const cancel = await lifecycle(env, "archive", a.body.submissionId);
+  await callback(env, cancel.replace("l:", "x:"));
+  await callback(env, cancel);
+  assert.equal(rows(db)[0].archived_at, null);
+  await callback(env, await lifecycle(env, "archive", a.body.submissionId));
+  for (const cmd of ["/guests", "/drinks", "/parking", "/export"]) {
+    telegram = [];
+    await command(env, cmd);
+    assert.ok(!JSON.stringify(telegram).includes("UNIQUE_ARCHIVE_PERSON"));
+  }
+  assert.equal(
+    db.sqlite
+      .prepare(
+        "SELECT count(*) n FROM rsvp_outbox WHERE state IN ('pending','sending')",
+      )
+      .get().n,
+    0,
+  );
+  telegram = [];
+  await command(env, "/archived");
+  assert.ok(JSON.stringify(telegram).includes("UNIQUE_ARCHIVE_PERSON"));
+  db.close();
+});
+
+test("Final build supports confirmed individual erase, cascades receipts, invalidates old identity, excludes bulk handlers", async () => {
+  const db = database(),
+    env = envFor(db),
+    a = await identity(env);
+  await save(env, a);
+  const token = await lifecycle(env, "erase", a.body.submissionId, production);
+  await callback(env, token, 22222, updateNumber++, production);
+  assert.equal(rows(db).length, 1);
+  await callback(env, token, 11111, updateNumber++, production);
+  assert.equal(rows(db).length, 0);
+  assert.equal(
+    db.sqlite.prepare("SELECT count(*) n FROM rsvp_requests").get().n,
+    0,
+  );
+  assert.equal(
+    db.sqlite.prepare("SELECT count(*) n FROM rsvp_outbox").get().n,
+    0,
+  );
+  assert.equal((await save(env, a)).status, 410);
+  const source = fs.readFileSync(
+    new URL("../worker/wedding-rsvp-api.production.js", import.meta.url),
+    "utf8",
+  );
+  assert.ok(!source.includes("/clear_test"));
+  assert.ok(!source.includes("handleTestAdmin"));
+  db.close();
+});
+
+test("0002 preserves existing v2 answers, receipts, identity and revision", async () => {
+  const db = new D1Local();
+  db.sqlite.exec(legacySql);
+  db.migrate();
+  db.sqlite
+    .prepare(
+      "INSERT INTO rsvp_responses(id,name,attending,edit_token_hash,revision) VALUES(?,?,?,?,?)",
+    )
+    .run(uuid(), "Legacy", NO, "HASH", 9);
+  const before = rows(db)[0];
+  db.migrateArchive();
+  const after = rows(db)[0];
+  assert.equal(after.archived_at, null);
+  delete after.archived_at;
+  assert.deepEqual(after, before);
+  db.close();
+});
+
+test("Reopened rejection at full capacity consumes no space and approval remains blocked", async () => {
+  const db = database(),
+    env = envFor(db),
+    a = await identity(env, { carCount: 8 }),
+    b = await identity(env, { carCount: 1 });
+  await save(env, a);
+  await save(env, b);
+  await callback(env, `p:r:${b.body.submissionId}:1`);
+  await callback(env, `p:a:${a.body.submissionId}:1`);
+  await callback(env, `p:u:${b.body.submissionId}:2`);
+  assert.equal(
+    rows(db).find((r) => r.id === b.body.submissionId).parking_status,
+    "pending",
+  );
+  await callback(env, `p:a:${b.body.submissionId}:3`);
+  assert.equal(
+    rows(db).find((r) => r.id === b.body.submissionId).parking_status,
+    "pending",
+  );
+  db.close();
+});
+
+test("Concurrent archive confirmation and owner edit serialize without overwriting archived answers", async () => {
+  const db = database(),
+    env = envFor(db),
+    a = await identity(env);
+  await save(env, a);
+  const token = await lifecycle(env, "archive", a.body.submissionId);
+  await Promise.all([
+    callback(env, token),
+    save(env, edit(a, 1, { message: "racing edit" })),
+  ]);
+  const row = rows(db)[0];
+  assert.equal(row.revision, 2);
+  if (row.archived_at) {
+    assert.equal(row.message, "До встречи");
+    assert.equal((await save(env, a)).data.error, "RESPONSE_ARCHIVED");
+  } else assert.equal(row.message, "racing edit");
+  db.close();
+});
+
+for (const count of [1, 7])
+  test(`Archive ${count} approved cars releases exactly those places; two-admin restore races cannot approve`, async () => {
+    const db = database(),
+      env = envFor(db),
+      a = await identity(env, { carCount: count }),
+      b = await identity(env, { carCount: 8 - count });
+    await save(env, a);
+    await save(env, b);
+    await callback(env, `p:a:${a.body.submissionId}:1`);
+    await callback(env, `p:a:${b.body.submissionId}:1`);
+    await callback(env, await lifecycle(env, "archive", a.body.submissionId));
+    const sum = () =>
+      db.sqlite
+        .prepare(
+          "SELECT coalesce(sum(cars_requested),0) n FROM rsvp_responses WHERE archived_at IS NULL AND parking_status='approved'",
+        )
+        .get().n;
+    assert.equal(sum(), 8 - count);
+    const t1 = await lifecycle(env, "restore", a.body.submissionId);
+    await command(env, "/restore " + a.body.submissionId, 22222);
+    const t2 =
+      telegram.at(-1).data.reply_markup.inline_keyboard[0][0].callback_data;
+    await Promise.all([callback(env, t1), callback(env, t2, 22222)]);
+    const row = rows(db).find((r) => r.id === a.body.submissionId);
+    assert.equal(row.revision, 4);
+    assert.equal(row.parking_status, "pending");
+    assert.equal(sum(), 8 - count);
+    db.close();
+  });
+
+test("No parking request restores not_requested; public callers and group admins cannot archive", async () => {
+  const db = database(),
+    env = envFor(db),
+    a = await identity(env, { attending: NO });
+  await save(env, a);
+  const token = await lifecycle(env, "archive", a.body.submissionId);
+  await telegramUpdate(env, {
+    update_id: updateNumber++,
+    callback_query: {
+      id: "group",
+      data: token,
+      from: { id: 11111 },
+      message: { chat: { id: -1, type: "group" }, message_id: 1 },
+    },
+  });
+  assert.equal(rows(db)[0].archived_at, null);
+  assert.equal(
+    (await call(env, "/archive", "POST", { id: a.body.submissionId }, a.secret))
+      .status,
+    404,
+  );
+  await callback(env, token);
+  await callback(env, await lifecycle(env, "restore", a.body.submissionId));
+  assert.equal(rows(db)[0].parking_status, "not_requested");
+  db.close();
 });
