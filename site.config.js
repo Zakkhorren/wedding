@@ -25,7 +25,7 @@ window.WEDDING_CONFIG = {
   // Set rsvpMode to 'maintenance' to pause submissions without demo success.
   rsvpMode: 'production',
   rsvpEndpoint: 'https://wedding-rsvp-api.zakk-horren.workers.dev/rsvp',
-  turnstileSitekey: '', // REQUIRED before launch: wedding-rsvp-form public Site key.
+  turnstileSitekey: '0x4AAAAAAFp1XZOirjTP89sY', // Public Site key: wedding-rsvp-form.
   // The isolated preview launcher explicitly selects demo + preview mode.
   rsvpPreview: {
     enabled: false,
