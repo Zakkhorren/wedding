@@ -3,6 +3,8 @@ import { createTurnstile } from "./rsvp-turnstile.mjs";
 
 const TEST_ENDPOINT =
   "https://wedding-rsvp-api-test.zakk-horren.workers.dev/rsvp";
+const PRODUCTION_ENDPOINT =
+  "https://wedding-rsvp-api.zakk-horren.workers.dev/rsvp";
 const errors = {
   NETWORK_RETRY:
     "Не удалось получить подтверждение из-за сети. Ответы сохранены в этом браузере. Повторите отправку — новая анкета не создастся.",
@@ -41,7 +43,11 @@ const errors = {
   PREVIEW_DISABLED:
     "Тестовая отправка отключена. Откройте предварительную версию по инструкции проверки.",
   SITEKEY_REQUIRED:
-    "Для проверки нужен публичный Turnstile sitekey. Укажите его в запуске предварительной версии.",
+    "Не удалось настроить проверку безопасности. Отправка временно недоступна. Попробуйте позже.",
+  MAINTENANCE:
+    "Отправка временно недоступна. Ваши сохранённые ответы остаются в этом браузере. Пожалуйста, попробуйте позже.",
+  TEST_LINK:
+    "Это ссылка тестовой анкеты. Тестовые ответы не переносятся организаторам. Для настоящего ответа откройте сайт без ссылки тестовой анкеты.",
 };
 const conflicts = new Set([
   "REVISION_CONFLICT",
@@ -58,6 +64,8 @@ const fatal = new Set([
   "SESSION_CHANGED",
   "PREVIEW_DISABLED",
   "SITEKEY_REQUIRED",
+  "MAINTENANCE",
+  "TEST_LINK",
 ]);
 
 export async function mountRsvp({
@@ -91,7 +99,9 @@ export async function mountRsvp({
   success.setAttribute("aria-labelledby", "rsvp-success-title");
   $("#mode-note").textContent = config?.local
     ? "Локальная проверка: ответы сохраняются только во временной базе этого окна. Организаторам ничего не отправляется."
-    : "Предварительная версия: ответы отправляются только в тестовую базу.";
+    : config?.production
+      ? "Ваш ответ будет передан организаторам праздника."
+      : "Предварительная версия: ответы отправляются только в тестовую базу.";
 
   function lock() {
     const locked = busy || blocked;
@@ -188,7 +198,8 @@ export async function mountRsvp({
             : "";
     $("#success-message").textContent = "Ваш ответ сохранён." + parkingText;
     const link = new URL(session.editLink());
-    link.searchParams.set("rsvp_preview", "1");
+    if (config.production) link.searchParams.delete("rsvp_preview");
+    else link.searchParams.set("rsvp_preview", "1");
     $("#rsvp-link").value = link.href;
     $("#rsvp-edit-link").hidden = false;
     $("#rsvp-copy-status").textContent = "";
@@ -206,7 +217,16 @@ export async function mountRsvp({
     lock();
     notify("Проверяем сохранённый ответ…");
     try {
-      if (config?.enabled !== true || config.endpoint !== TEST_ENDPOINT)
+      if (config?.maintenance) throw { code: "MAINTENANCE" };
+      // Preview links contain test identities. Reject BEFORE opening any session
+      // or touching production storage/API, even if their private fragment is valid.
+      if (config?.production && new URL(entry).searchParams.has("rsvp_preview"))
+        throw { code: "TEST_LINK" };
+      if (
+        config?.enabled !== true ||
+        config.endpoint !==
+          (config.production ? PRODUCTION_ENDPOINT : TEST_ENDPOINT)
+      )
         throw { code: "PREVIEW_DISABLED" };
       if (!config.turnstileSitekey?.trim()) throw { code: "SITEKEY_REQUIRED" };
       session = await openRsvpSession({
