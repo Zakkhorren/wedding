@@ -10,6 +10,7 @@ import {
 } from "./rsvp-preview-support.mjs";
 const args = process.argv.slice(2);
 const smoke = args.includes("--smoke");
+const production = args.includes("--production");
 if (args.includes("--test-api") || args.includes("--sitekey"))
   throw Error(
     "Real Turnstile is not supported in this Playwright preview. Use the ordinary-browser procedure in MANUAL-E2E-WINDOWS.md. This launcher is local-only.",
@@ -17,7 +18,7 @@ if (args.includes("--test-api") || args.includes("--sitekey"))
 let local, context;
 try {
   // Initialise workerd before opening a browser; failed startup leaves no empty window.
-  local = await localPreviewWorker();
+  local = await localPreviewWorker({ production });
   context = await chromium.launchPersistentContext(
     path.join(root, ".qa", "rsvp-isolated-browser-" + Date.now()),
     {
@@ -28,10 +29,20 @@ try {
   await routePreview(context, {
     sitekey: "LOCAL_PREVIEW",
     local: true,
+    production,
   });
-  await routeLocalWorker(context, local.mf);
+  await routeLocalWorker(
+    context,
+    local.mf,
+    production
+      ? "https://wedding-rsvp-api.zakk-horren.workers.dev/rsvp"
+      : undefined,
+  );
   const page = context.pages()[0] || (await context.newPage());
-  await page.goto(previewUrl, { waitUntil: "domcontentloaded" });
+  await page.goto(
+    production ? "https://zakkhorren.github.io/wedding/" : previewUrl,
+    { waitUntil: "domcontentloaded" },
+  );
   console.log(
     "Local preview ready. API, D1, Turnstile and Telegram are local mocks; nothing is sent remotely.",
   );

@@ -13,7 +13,13 @@ export const previewEndpoint =
 
 export async function routePreview(
   context,
-  { sitekey, enabled = true, local = false } = {},
+  {
+    sitekey,
+    enabled = true,
+    local = false,
+    production = false,
+    maintenance = false,
+  } = {},
 ) {
   const allowed = new Set([
     "index.html",
@@ -55,7 +61,17 @@ export async function routePreview(
         body = Buffer.concat([
           body,
           Buffer.from(
-            "\nwindow.WEDDING_CONFIG.rsvpPreview=" +
+            "\nwindow.WEDDING_CONFIG.rsvpMode=" +
+              JSON.stringify(
+                production
+                  ? maintenance
+                    ? "maintenance"
+                    : "production"
+                  : "demo",
+              ) +
+              ";window.WEDDING_CONFIG.turnstileSitekey=" +
+              JSON.stringify(sitekey || "") +
+              ";window.WEDDING_CONFIG.rsvpPreview=" +
               JSON.stringify({
                 enabled,
                 endpoint: previewEndpoint,
@@ -111,10 +127,15 @@ function sqlStatements(file) {
   if (buffer.trim()) throw Error("Incomplete SQL fixture");
   return statements;
 }
-export async function localPreviewWorker() {
+export async function localPreviewWorker({ production = false } = {}) {
   const mf = createLocalRuntime({
     modules: true,
-    scriptPath: path.join(root, "worker/wedding-rsvp-api.js"),
+    scriptPath: path.join(
+      root,
+      production
+        ? "worker/wedding-rsvp-api.production.js"
+        : "worker/wedding-rsvp-api.js",
+    ),
     d1Databases: ["DB"],
     bindings: {
       ALLOWED_ORIGIN: previewOrigin,
@@ -150,8 +171,12 @@ export async function localPreviewWorker() {
     throw error;
   }
 }
-export async function routeLocalWorker(context, mf) {
-  await context.route(previewEndpoint + "**", async (route) => {
+export async function routeLocalWorker(
+  context,
+  mf,
+  endpoint = previewEndpoint,
+) {
+  await context.route(endpoint + "**", async (route) => {
     const request = route.request();
     const response = await mf.dispatchFetch(request.url(), {
       method: request.method(),

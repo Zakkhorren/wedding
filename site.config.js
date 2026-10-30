@@ -1,7 +1,7 @@
 /**
  * Меняйте тексты и фотографии здесь — верстку трогать не нужно.
  * Для окончательной версии положите собственные изображения в assets/ и укажите путь вида assets/photo.jpg.
- * Проверка настоящей формы API v2 описана в RSVP-PREVIEW.md: одного URL для включения отправки недостаточно.
+ * Production-пакет и порядок запуска описаны в PRODUCTION-ROLLOUT.md.
  * НИКОГДА не вписывайте сюда токен Telegram-бота, пароль, секретный API key или chat_id.
  */
 window.WEDDING_CONFIG = {
@@ -20,9 +20,13 @@ window.WEDDING_CONFIG = {
     ['18:00', 'банкет и танцы'],
     ['22:00', 'обнимашки на прощание']
   ],
-  rsvpEndpoint: '',
-  // Stage A only: the preview launcher enables this in its isolated browser.
-  // Neither an endpoint alone nor a private edit link enables network submission.
+  // Production package: deploy only AFTER the production API v2 is ready.
+  // Only the public Turnstile Site key belongs here, never its Secret key.
+  // Set rsvpMode to 'maintenance' to pause submissions without demo success.
+  rsvpMode: 'production',
+  rsvpEndpoint: 'https://wedding-rsvp-api.zakk-horren.workers.dev/rsvp',
+  turnstileSitekey: '0x4AAAAAAFp1XZOirjTP89sY', // Public Site key: wedding-rsvp-form.
+  // The isolated preview launcher explicitly selects demo + preview mode.
   rsvpPreview: {
     enabled: false,
     endpoint: 'https://wedding-rsvp-api-test.zakk-horren.workers.dev/rsvp',

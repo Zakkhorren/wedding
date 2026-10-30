@@ -285,7 +285,8 @@
   const form = $('#rsvp-form');
   const attendingGroup = $('#attending-fields');
   const previewRequested = new URLSearchParams(location.search).get('rsvp_preview') === '1';
-  const isDemo = !previewRequested;
+  const productionMode = config.rsvpMode === 'production' || config.rsvpMode === 'maintenance';
+  const isDemo = !productionMode && !previewRequested;
   let liveForm;
   const entryUrl = initialRsvpUrl;
   const modeNote = $('#mode-note');
@@ -406,7 +407,8 @@
     $('#rsvp').classList.add('rsvp-preview');
     form.querySelectorAll('input,textarea,button').forEach(input => { input.disabled = true; });
     import('./rsvp-ui.mjs').then(async ({ mountRsvp }) => {
-      liveForm = await mountRsvp({ config: config.rsvpPreview, entryUrl, form, syncCompany, resizeMessage, motionOK });
+      const rsvpConfig = productionMode ? { enabled: true, production: true, maintenance: config.rsvpMode === 'maintenance', endpoint: config.rsvpEndpoint, turnstileSitekey: config.turnstileSitekey } : config.rsvpPreview;
+      liveForm = await mountRsvp({ config: rsvpConfig, entryUrl, form, syncCompany, resizeMessage, motionOK });
     }).catch(() => {
       $('#rsvp-feedback').hidden = false;
       $('#rsvp-status').textContent = 'Не удалось загрузить анкету. Обновите страницу: введённые ответы ещё не отправлены.';

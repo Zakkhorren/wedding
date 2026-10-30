@@ -59,7 +59,7 @@ export function buildManualPage(sitekey) {
   );
   const config =
     read("site.config.js") +
-    "\nwindow.WEDDING_CONFIG.rsvpPreview=" +
+    "\nwindow.WEDDING_CONFIG.rsvpMode='demo';window.WEDDING_CONFIG.rsvpPreview=" +
     JSON.stringify({
       enabled: false,
       endpoint: manualEndpoint,
