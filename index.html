@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="no-referrer" />
   <meta name="theme-color" content="#F3E6D4" />
   <meta name="description" content="Свадебное приглашение. Мы будем рады разделить этот день с вами!" />
   <title>Мы женимся! — приглашение</title>
@@ -107,6 +108,15 @@
         <h2 class="rsvp-title reveal" id="rsvp-title">Мы очень ждём вас!</h2>
         <p class="rsvp-lead reveal">Пожалуйста, подтвердите своё присутствие, заполнив анкету ниже. Это поможет нам в организации нашего праздника.</p>
         <div class="rsvp-deadline reveal" id="rsvp-deadline">Ответьте, пожалуйста, до 20.12.2026</div>
+        <div class="rsvp-feedback" id="rsvp-feedback" hidden>
+          <p id="rsvp-status" role="status" aria-live="polite" tabindex="-1"></p>
+          <div class="rsvp-actions">
+            <button class="edit-answer" id="rsvp-retry" type="button" hidden>Повторить попытку</button>
+            <button class="edit-answer" id="rsvp-reload" type="button" hidden>Загрузить актуальный ответ</button>
+            <button class="edit-answer" id="rsvp-new" type="button" hidden>Начать новую анкету</button>
+          </div>
+        </div>
+        <p id="rsvp-save-announcement" class="rsvp-sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
         <form class="rsvp-form reveal" id="rsvp-form" novalidate>
           <label class="form-block"><span>Имя и фамилия <b>*</b></span><input name="name" type="text" autocomplete="name" placeholder="Как к вам обращаться" required maxlength="120" /></label>
           <fieldset class="form-block"><legend>Планируете присутствовать на свадьбе? <b>*</b></legend>
@@ -142,10 +152,11 @@
           <label class="consent"><input type="checkbox" name="consent" required /><span>Согласен(на) передать эти ответы организаторам праздника для учета гостей. <b>*</b></span></label>
           <div class="honeypot" aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off" /></label></div>
           <p id="mode-note" class="mode-note" role="status"></p>
+          <div id="rsvp-turnstile" class="rsvp-turnstile" hidden aria-label="Проверка безопасности"></div>
           <p id="form-error" class="form-error" role="alert" hidden></p>
           <button type="submit" id="rsvp-submit" class="submit-button">Отправить ответ</button>
         </form>
-        <div id="rsvp-success" class="rsvp-success" role="status" hidden><div class="success-heart"><svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></div><h3>Спасибо за ответ!</h3><p id="success-message"></p><button class="edit-answer" id="edit-answer" type="button">Изменить ответ <svg class="arrow-icon arrow-diagonal" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></button></div>
+        <div id="rsvp-success" class="rsvp-success" role="status" hidden><div class="success-heart"><svg class="heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></div><h3 id="rsvp-success-title">Спасибо за ответ!</h3><p id="success-message"></p><div class="rsvp-edit-link" id="rsvp-edit-link" hidden><label for="rsvp-link">Персональная ссылка для редактирования</label><input id="rsvp-link" type="text" readonly autocomplete="off" spellcheck="false" /><button class="edit-answer" id="rsvp-copy" type="button">Скопировать ссылку</button><div class="rsvp-link-warning"><p class="rsvp-link-warning-title"><svg class="rsvp-warning-icon" viewBox="0 0 12 28" aria-hidden="true" focusable="false"><path d="M6 3v15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="6" cy="24" r="1.5" fill="currentColor"/></svg>Внимание! Сохраните эту ссылку</p><p class="rsvp-link-warning-detail">Она понадобится, если вы захотите изменить ответ с другого устройства. Не передавайте ссылку посторонним.</p></div><p id="rsvp-copy-status" role="status" aria-live="polite"></p></div><button class="edit-answer" id="edit-answer" type="button">Изменить ответ <svg class="arrow-icon arrow-diagonal" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></button></div>
         <div class="footer-line thread-decoration" aria-hidden="true"><svg class="thread-line" viewBox="0 0 1000 120" preserveAspectRatio="none"><path d="M0 8 Q500 180 1000 8"/></svg><svg class="thread-heart heart-icon" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-shape"/></svg></div>
         <p class="goodbye reveal">до скорой встречи!</p><p class="signature" id="signature">ваши Соня и Леша <svg class="heart-icon heart-outline" viewBox="0 0 92.66 85.85" aria-hidden="true"><use href="#wedding-heart-outline"/></svg></p>
         <footer class="author-footer">

@@ -2,6 +2,13 @@
   'use strict';
   const $ = (selector) => document.querySelector(selector);
   const config = window.WEDDING_CONFIG || {};
+  const initialRsvpUrl = location.href;
+  const privateLink = new URLSearchParams(location.hash.slice(1));
+  if (privateLink.has('rsvp_id') || privateLink.has('edit_key')) {
+    const cleanUrl = new URL(location.href);
+    cleanUrl.hash = '';
+    history.replaceState(null, '', cleanUrl.href);
+  }
   const date = /^\d{4}-\d{2}-\d{2}$/.test(config.date || '') ? new Date(`${config.date}T12:00:00`) : new Date('2027-01-23T12:00:00');
   const dateLabel = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
   const dateLong = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
@@ -277,8 +284,10 @@
 
   const form = $('#rsvp-form');
   const attendingGroup = $('#attending-fields');
-  const endpoint = String(config.rsvpEndpoint || '').trim();
-  const isDemo = !/^https:\/\//.test(endpoint);
+  const previewRequested = new URLSearchParams(location.search).get('rsvp_preview') === '1';
+  const isDemo = !previewRequested;
+  let liveForm;
+  const entryUrl = initialRsvpUrl;
   const modeNote = $('#mode-note');
   if (isDemo) modeNote.textContent = 'Демо-режим: ответы пока никуда не отправляются. Для настоящей отправки подключим Telegram или почту.';
   else modeNote.textContent = 'Ваш ответ будет передан организаторам праздника.';
@@ -289,9 +298,14 @@
     const style = getComputedStyle(textarea);
     const borders = parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
     textarea.style.height = `${Math.max(48, textarea.scrollHeight + borders)}px`;
+    requestAnimationFrame(() => {
+      // Recheck after responsive line metrics settle; grow only to actual content.
+      if (textarea.clientHeight && textarea.scrollHeight > textarea.clientHeight)
+        textarea.style.height = `${textarea.scrollHeight + borders}px`;
+    });
   }
   form?.elements.message.addEventListener('input', resizeMessage);
-  window.addEventListener('resize', resizeMessage, { passive: true });
+  window.addEventListener('resize', () => requestAnimationFrame(resizeMessage), { passive: true });
   document.fonts.ready.then(resizeMessage);
   resizeMessage();
   function syncParking() {
@@ -309,12 +323,19 @@
   }
   function syncCompany() {
     const attendingYes = form.querySelector('input[name="attending"]:checked')?.value === 'Да, конечно!';
+    if (!attendingYes) {
+      form.elements.guestCount.value = '1';
+      form.elements.additionalGuests.value = '';
+      form.elements.otherDrink.value = '';
+      form.querySelectorAll('[name=drinks]').forEach(input => { input.checked = false; });
+    }
     const count = Number(form.elements.guestCount.value);
     attendingGroup.classList.toggle('inactive', !attendingYes);
     attendingGroup.querySelectorAll('input, textarea').forEach(input => { input.disabled = !attendingYes; });
     const hasOthers = attendingYes && Number.isSafeInteger(count) && count > 1;
     $('#additional-guests-field').hidden = !hasOthers;
     form.elements.additionalGuests.disabled = !hasOthers;
+    if (!attendingYes || count === 1) form.elements.additionalGuests.value = '';
     $('#guest-minus').disabled = !attendingYes || !Number.isSafeInteger(count) || count <= 1;
     $('#guest-plus').disabled = !attendingYes || !Number.isSafeInteger(count) || count < 1 || count === Number.MAX_SAFE_INTEGER;
     syncParking();
@@ -367,30 +388,28 @@
       createdAt: new Date().toISOString(),
       consent: true
     };
-    const button = $('#rsvp-submit');
     if (isDemo) {
       form.hidden = true; $('#rsvp-success').hidden = false;
       text('#success-message', 'Анкета заполнена правильно, но это демо: данные не сохранены и не отправлены. После подключения получателя они смогут приходить в Telegram или на почту.');
       $('#rsvp-success').scrollIntoView({ behavior: motionOK ? 'smooth' : 'auto', block: 'center' });
       return;
     }
-    button.disabled = true; button.textContent = 'Отправляем...';
-    try {
-      const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(answer) });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const acknowledgement = await response.json();
-      if (acknowledgement?.ok !== true) throw new Error('Save was not acknowledged');
-      form.hidden = true; $('#rsvp-success').hidden = false;
-      text('#success-message', 'Ваш ответ доставлен организаторам. Спасибо! ♡');
-      $('#rsvp-success').scrollIntoView({ behavior: motionOK ? 'smooth' : 'auto', block: 'center' });
-    } catch {
-      error.textContent = 'Не удалось отправить анкету. Пожалуйста, попробуйте позже или напишите организаторам напрямую.';
-      error.hidden = false;
-    } finally { button.disabled = false; button.textContent = 'Отправить ответ'; }
+    if (liveForm) await liveForm.submit(answer);
   });
   $('#edit-answer')?.addEventListener('click', () => {
+    if (!isDemo) return;
     $('#rsvp-success').hidden = true; form.hidden = false;
     resizeMessage();
     form.scrollIntoView({ behavior: motionOK ? 'smooth' : 'auto', block: 'start' });
   });
+  if (!isDemo) {
+    $('#rsvp').classList.add('rsvp-preview');
+    form.querySelectorAll('input,textarea,button').forEach(input => { input.disabled = true; });
+    import('./rsvp-ui.mjs').then(async ({ mountRsvp }) => {
+      liveForm = await mountRsvp({ config: config.rsvpPreview, entryUrl, form, syncCompany, resizeMessage, motionOK });
+    }).catch(() => {
+      $('#rsvp-feedback').hidden = false;
+      $('#rsvp-status').textContent = 'Не удалось загрузить анкету. Обновите страницу: введённые ответы ещё не отправлены.';
+    });
+  }
 })();

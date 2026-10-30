@@ -1,0 +1,29 @@
+{
+  "name": "wedding-rsvp-preview",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "preview": "node scripts/preview-rsvp.mjs",
+    "preview:smoke": "node scripts/preview-rsvp.mjs --smoke",
+    "preview:manual": "node scripts/manual-rsvp-preview.mjs",
+    "setup:preview": "playwright install chromium",
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
+    "test:rsvp": "node tests/rsvp-form-browser.mjs && node tests/rsvp-form-errors.mjs"
+  },
+  "devDependencies": {
+    "miniflare": "4.20260730.0",
+    "playwright": "1.64.1"
+  },
+  "overrides": {
+    "miniflare": {
+      "sharp": "0.35.5",
+      "undici": "7.30.1"
+    }
+  },
+  "allowScripts": {
+    "workerd@1.20260730.1": true
+  }
+}

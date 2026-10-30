@@ -51,11 +51,11 @@ const server = http.createServer((req,res) => {
       fs.mkdirSync(path.join(root,'.qa'),{recursive:true});
       await page.locator('.guest-count-block').screenshot({path:path.join(root,`.qa/company-counter-${width}.png`)});
     }
-    let status=200, body={ok:true}, payloads=[];
+    const payloads=[];
     await page.route('**/site.config.js',route=>route.fulfill({contentType:'text/javascript',body:config.replace("rsvpEndpoint: ''","rsvpEndpoint: 'https://rsvp.test/answer'")}));
     await page.route('https://rsvp.test/answer',route=>{
       payloads.push(route.request().postDataJSON());
-      return route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
+      return route.fulfill({status:200,contentType:'application/json',body:'{"ok":true}'});
     });
     await page.reload();
     await page.locator('[name=name]').fill('Тестовая компания');
@@ -70,22 +70,20 @@ const server = http.createServer((req,res) => {
     await page.locator('[name=drinks][value="Ром"]').check();
     await page.locator('[name=parking][value=yes]').check();
     await page.locator('[name=carCount]').fill('2');
-    body={ok:false};
-    await page.locator('#rsvp-submit').click();
-    await page.locator('#form-error').waitFor({state:'visible'});
-    assert.equal(await page.locator('#rsvp-success').isVisible(),false,'HTTP 200 is not sufficient without acknowledgement');
-    body={ok:true};
     await page.locator('#rsvp-submit').click(); await page.locator('#rsvp-success').waitFor({state:'visible'});
-    assert.equal(payloads.at(-1).guestCount,3); assert.deepEqual(payloads.at(-1).drinks,['Виски','Ром']); assert.equal(payloads.at(-1).carCount,2);
+    assert.equal(payloads.length,0,'An endpoint alone must never enable submission');
+    assert.ok((await page.locator('#success-message').textContent()).includes('демо'));
     await page.locator('#edit-answer').click(); await page.locator('[name=guestCount]').fill('1');
     await page.locator('#rsvp-submit').click(); await page.locator('#rsvp-success').waitFor({state:'visible'});
-    assert.equal(payloads.at(-1).guestCount,1); assert.equal(payloads.at(-1).additionalGuests,'');
+    assert.equal(await page.locator('[name=additionalGuests]').inputValue(),'');
     for (const index of [1,2]) {
       await page.locator('#edit-answer').click(); await page.locator('[name=attending]').nth(index).check();
       await page.locator('#rsvp-submit').click(); await page.locator('#rsvp-success').waitFor({state:'visible'});
-      const result=payloads.at(-1);assert.equal(result.guestCount,0);assert.equal(result.parking,null);assert.equal(result.carCount,null);assert.deepEqual(result.drinks,[]);assert.equal(result.additionalGuests,'');
+      assert.equal(payloads.length,0);
+      assert.equal(await page.locator('[name=drinks]').first().isDisabled(),true);
+      assert.equal(await page.locator('[name=additionalGuests]').inputValue(),'');
     }
     assert.deepEqual(errors,[]);
-    console.log('PASS: seven widths, compact counter, attendance conditions, numerical guestCount, multiple drinks, parking, acknowledged POST and inactive-field exclusion; no real API requests');
+    console.log('PASS: seven widths, counter, attendance conditions, validation and demo gate even with endpoint set; API v2 submission covered by rsvp-form-browser/errors');
   } finally { await browser.close(); server.close(); }
 })().catch(error=>{ console.error(error); server.close(); process.exitCode=1; });

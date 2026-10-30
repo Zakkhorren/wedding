@@ -1,4 +1,4 @@
-// Prepared client adapter for API v2. Deliberately NOT loaded by the demo site.
+// API v2 adapter. Loaded by the real form only after the explicit preview gate.
 import { normalizeAnswer } from "./worker/rsvp-policy.mjs";
 export class RsvpSessionError extends Error {
   constructor(code) {
@@ -19,13 +19,20 @@ const valid = (s) =>
 const canonical = (value) => JSON.stringify(value);
 export async function openRsvpSession({
   endpoint,
-  storage = globalThis.localStorage,
+  storage,
   pageUrl = globalThis.location?.href,
   history = globalThis.history,
   fetcher = fetch,
   locks = globalThis.navigator?.locks,
   confirmNewAfterDeletedLink = false,
 } = {}) {
+  if (storage === undefined) {
+    try {
+      storage = globalThis.localStorage;
+    } catch {
+      throw new RsvpSessionError("LOCAL_IDENTITY_UNAVAILABLE");
+    }
+  }
   const api = new URL(endpoint);
   if (
     api.protocol !== "https:" ||
@@ -215,6 +222,10 @@ export async function openRsvpSession({
   return {
     get submissionId() {
       return state.id;
+    },
+    get pendingAnswer() {
+      const pending = current().pending;
+      return pending ? structuredClone(pending.answer) : null;
     },
     restore,
     editLink() {

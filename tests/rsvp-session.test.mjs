@@ -244,3 +244,46 @@ test("Deleted imported edit link offers explicit new identity without reusing th
   assert.notEqual(fresh.submissionId, old);
   assert.equal((await fresh.save(answer, async () => "valid")).saved, true);
 });
+
+test("Pending answer is a detached snapshot for recovery UI; blocked localStorage getter fails safely", async () => {
+  const server = service(),
+    store = storage();
+  const session = await openRsvpSession({
+    endpoint,
+    storage: store,
+    pageUrl,
+    fetcher: server.fetcher,
+  });
+  await assert.rejects(
+    session.save(answer, async () => {
+      throw { code: "TURNSTILE_UNAVAILABLE" };
+    }),
+    { code: "TURNSTILE_UNAVAILABLE" },
+  );
+  const pending = session.pendingAnswer;
+  assert.equal(pending.name, answer.name);
+  pending.name = "modified copy";
+  assert.equal(session.pendingAnswer.name, answer.name);
+  await session.save(answer, async () => "valid");
+  assert.equal(session.pendingAnswer, null);
+  const descriptor = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "localStorage",
+  );
+  try {
+    Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
+      get() {
+        throw new Error("blocked storage");
+      },
+    });
+    await assert.rejects(
+      openRsvpSession({ endpoint, pageUrl, fetcher: server.fetcher }),
+      { code: "LOCAL_IDENTITY_UNAVAILABLE" },
+    );
+  } finally {
+    if (descriptor)
+      Object.defineProperty(globalThis, "localStorage", descriptor);
+    else delete globalThis.localStorage;
+  }
+});
