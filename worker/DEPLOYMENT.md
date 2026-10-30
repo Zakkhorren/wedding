@@ -90,6 +90,9 @@ Webhook: путь `/telegram`, secret совпадает с `WEBHOOK_SECRET`, `a
 
 Сохранены `/start`, `/help`, `/stats`, `/guests`, `/drinks`, `/parking`, `/export`. Статистика больше не ограничена первыми 500 строками; legacy-анкеты без количества людей отмечаются отдельно. Напитки считаются по компаниям.
 
+Формат `/export` обновлён с CSV на полноценный XLSX:
+[XLSX-EXPORT.md](XLSX-EXPORT.md). Поверх уже применённой 0002 новая миграция не нужна.
+
 ## 6. Реальные тестовые отправки без основной анкеты
 
 После ручного развёртывания тестового Worker открыть `https://zakkhorren.github.io/wedding/tests/manual-api.html` (либо локально с соответствующими `ALLOWED_ORIGIN` и hostname Turnstile).

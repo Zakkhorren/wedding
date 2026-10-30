@@ -1,3 +1,4 @@
+import { readXlsxParts } from "./xlsx-reader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -52,6 +53,11 @@ globalThis.fetch = async (url, options) => {
       options.body instanceof FormData
         ? {
             chat_id: options.body.get("chat_id"),
+            filename: options.body.get("document").name,
+            mime: options.body.get("document").type,
+            bytes: Buffer.from(
+              await options.body.get("document").arrayBuffer(),
+            ),
             document: Buffer.from(
               await options.body.get("document").arrayBuffer(),
             ).toString("utf8"),
@@ -369,7 +375,7 @@ test("Guest edits preserve approval for drinks/message and reset approval for ca
   assert.ok(telegram.at(-1).data.text.includes("Подтверждено гостей: 0"));
   db.close();
 });
-test("Existing commands, exact guest sums, companies per drink and CSV continue working", async () => {
+test("Existing commands, exact guest sums, companies per drink and XLSX continue working", async () => {
   const db = database(),
     env = envFor(db);
   await save(env, await identity(env, { guestCount: 3 }));
@@ -392,9 +398,14 @@ test("Existing commands, exact guest sums, companies per drink and CSV continue 
   assert.ok(messages.includes("Подтверждено гостей: 5"));
   assert.ok(messages.includes("Виски: 2"));
   assert.ok(messages.includes("Ожидают ответа: 1 компаний"));
-  const csv = telegram.filter((r) => r.method === "sendDocument").at(-1)
-    .data.document;
-  assert.ok(csv.startsWith("\ufeffsep=;\r\n"));
+  const file = telegram.filter((r) => r.method === "sendDocument").at(-1).data;
+  assert.equal(file.filename, "wedding-rsvp.xlsx");
+  assert.equal(
+    file.mime,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  );
+  const parts = readXlsxParts(file.bytes);
+  const csv = parts["xl/worksheets/sheet1.xml"];
   assert.ok(
     csv.includes("Количество гостей") && csv.includes("Статус парковки"),
   );
@@ -1009,4 +1020,54 @@ test("No parking request restores not_requested; public callers and group admins
   await callback(env, await lifecycle(env, "restore", a.body.submissionId));
   assert.equal(rows(db)[0].parking_status, "not_requested");
   db.close();
+});
+
+test("XLSX exports only current active answers and no actual editing keys in either build", async () => {
+  for (const implementation of [worker, production]) {
+    const db = database(),
+      env = envFor(db),
+      a = await identity(env, { name: "ARCHIVED_PERSON" }),
+      b = await identity(env, { name: "Active Кириллица" }),
+      c = await identity(env, { attending: NO, name: "Declined active" });
+    await save(env, a);
+    await save(env, b);
+    await save(env, c);
+    await callback(env, await lifecycle(env, "archive", a.body.submissionId));
+    await save(
+      env,
+      edit(b, 1, { message: '=HYPERLINK("https://evil.test")', guestCount: 2 }),
+    );
+    await telegramUpdate(
+      env,
+      {
+        update_id: updateNumber++,
+        message: {
+          text: "/export",
+          from: { id: 11111 },
+          chat: { id: 11111, type: "private" },
+        },
+      },
+      implementation,
+    );
+    const file = telegram
+      .filter((r) => r.method === "sendDocument")
+      .at(-1).data;
+    const parts = readXlsxParts(file.bytes),
+      sheet = parts["xl/worksheets/sheet1.xml"];
+    assert.equal((sheet.match(/<row /g) || []).length, 3);
+    assert.ok(
+      sheet.includes("Active Кириллица") && sheet.includes("Declined active"),
+    );
+    assert.ok(!sheet.includes("ARCHIVED_PERSON"));
+    assert.ok(!sheet.includes("<f>"));
+    assert.ok(sheet.includes("HYPERLINK"));
+    assert.ok(sheet.includes('t="inlineStr"'));
+    for (const record of rows(db))
+      assert.ok(
+        !Object.values(parts).join("").includes(record.edit_token_hash),
+      );
+    for (const identity of [a, b, c])
+      assert.ok(!Object.values(parts).join("").includes(identity.secret));
+    db.close();
+  }
 });

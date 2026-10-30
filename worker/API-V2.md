@@ -9,7 +9,7 @@
 - Чтение/сохранение: `Authorization: Bearer <ключ base64url, 43 символа / 32 случайных байта>`.
 - JSON, CORS, `Cache-Control: no-store`, `Referrer-Policy: no-referrer`. DELETE публичному API недоступен.
 - `submissionId` и `requestId` — UUID; ключ генерируется Web Crypto на устройстве гостя. В базе хранится SHA-256 от `id:key`.
-- Legacy-записи сохраняются в базе/статистике/CSV. Если ключа нет или его формат неизвестен, угадывание ID не позволяет присвоить или изменить такую анкету.
+- Legacy-записи сохраняются в базе/статистике/экспорте. Если ключа нет или его формат неизвестен, угадывание ID не позволяет присвоить или изменить такую анкету.
 
 ## GET /rsvp/bootstrap
 
@@ -84,6 +84,9 @@ const confidentialLink = session.editLink();
 - В будущем UI нельзя выводить ссылку в analytics/console/Telegram. Не журналировать Authorization и тела запросов Cloudflare.
 
 ## Архив (миграция 0002)
+
+Команда `/export` теперь отправляет XLSX вместо CSV. Контракт файла и проверки:
+[XLSX-EXPORT.md](XLSX-EXPORT.md). Публичный RSVP API не меняется.
 
 Полная процедура: [ARCHIVE-ROLLOUT.md](ARCHIVE-ROLLOUT.md). Частные административные команды `/archive ID`, `/archived`, `/restore ID`, `/erase ID` доступны в обеих сборках. Изменяющие операции требуют отдельного подтверждения; `/erase` удаляет только одну запись. Массовое удаление отсутствует в финальной сборке.
 
